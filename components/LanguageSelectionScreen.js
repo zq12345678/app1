@@ -4,17 +4,16 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function LanguageSelectionScreen({ route, navigation }) {
   const { currentLanguage } = route.params || {};
-  const [selectedLanguage, setSelectedLanguage] = useState(currentLanguage || 'Chinese (Simplified)');
+  const [selectedLanguage, setSelectedLanguage] = useState(currentLanguage || 'simplifiedChinese');
 
   const languages = [
-    { id: 'en', name: 'English', nativeName: 'English' },
-    { id: 'zh-CN', name: 'Chinese (Simplified)', nativeName: '简体中文' },
-    { id: 'zh-TW', name: 'Chinese (Traditional)', nativeName: '繁體中文' },
-    { id: 'es', name: 'Spanish', nativeName: 'Español' },
-    { id: 'fr', name: 'French', nativeName: 'Français' },
-    { id: 'de', name: 'German', nativeName: 'Deutsch' },
-    { id: 'ja', name: 'Japanese', nativeName: '日本語' },
-    { id: 'ko', name: 'Korean', nativeName: '한국어' },
+    { id: 'en', name: 'English', displayName: 'English' },
+    { id: 'zh-CN', name: 'simplifiedChinese', displayName: '简体中文' },
+    { id: 'it', name: 'italian', displayName: 'Italiano' },
+    { id: 'zh-TW', name: 'traditionalChinese', displayName: '繁體中文' },
+    { id: 'es', name: 'spanish', displayName: 'español' },
+    { id: 'ja', name: 'japanese', displayName: '日本語' },
+    { id: 'ko', name: 'korean', displayName: '한국인' },
   ];
 
   const handleLanguageSelect = (language) => {
@@ -73,8 +72,7 @@ export default function LanguageSelectionScreen({ route, navigation }) {
               </View>
             </View>
             <View style={styles.languageTextContainer}>
-              <Text style={styles.languageName}>{language.name}</Text>
-              <Text style={styles.languageNativeName}>{language.nativeName}</Text>
+              <Text style={styles.languageName}>{language.displayName}</Text>
             </View>
           </TouchableOpacity>
         ))}
@@ -192,11 +190,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#000000',
-    marginBottom: 2,
-  },
-  languageNativeName: {
-    fontSize: 14,
-    color: '#666666',
   },
 
   // Close Button
