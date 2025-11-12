@@ -7,6 +7,7 @@ export default function NoteDetailScreen({ route, navigation }) {
   const { lectureTitle, lectureDate, folderName } = route.params;
   const [autoTranslate, setAutoTranslate] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState('simplifiedChinese');
+  const [activeTab, setActiveTab] = useState('Transcript'); // 'Summary', 'Transcript', or 'Note'
 
   // Update selected language when returning from LanguageSelectionScreen
   React.useEffect(() => {
@@ -139,8 +140,58 @@ export default function NoteDetailScreen({ route, navigation }) {
     ]
   };
 
+  // Hardcoded summary data for different lectures
+  const summaryData = {
+    'Lecture 1': {
+      mainTopic: 'The talk covered connection strategies, suggesting students connect with industry leaders and professionals in their desired field. She recommended personalization in connection requests and engaging with content by commenting on posts, joining industry groups, and occasionally posting thoughtful content.',
+      mainTopicChinese: '该讲座涵盖了联系策略，建议学生与行业领导者和他们期望领域的专业人士建立联系。她建议在联系请求中进行个性化设置，并通过评论帖子、加入行业小组以及偶尔发布有思想的内容来参与互动。',
+      keyFormulas: [
+        'The section on keyword optimization and headline strategy was most valuable, particularly the word cloud generator technique for identifying industry-specific keywords.',
+        'Emily Perry explained analyzing job postings to create word clouds extracting commonly used terms, providing a concrete approach for modifying LinkedIn profiles to meet employer expectations.',
+        'LinkedIn functions as a recruiter search engine, with headlines playing a significant role in search algorithms - transforming professional image building from passive resumes to active marketing tools.'
+      ]
+    },
+    'Lecture 2': {
+      mainTopic: 'Today\'s lecture focused on data structures and algorithms, covering binary search trees, their properties, and implementation details. The professor emphasized understanding time and space complexity when choosing appropriate data structures.',
+      mainTopicChinese: '今天的讲座重点是数据结构和算法，涵盖了二叉搜索树、它们的属性和实现细节。教授强调了在选择适当的数据结构时理解时间和空间复杂度的重要性。',
+      keyFormulas: [
+        'Binary search trees provide O(log n) average case performance for search, insert, and delete operations.',
+        'Tree traversal methods include in-order (left-root-right), pre-order (root-left-right), and post-order (left-right-root).',
+        'Real-world applications include database indexing and file system organization for efficient data retrieval.'
+      ]
+    },
+    'Lecture 3': {
+      mainTopic: 'Machine learning fundamentals were introduced, exploring supervised learning, unsupervised learning, and reinforcement learning paradigms. The distinction between classification and regression problems was particularly emphasized.',
+      mainTopicChinese: '介绍了机器学习基础知识，探讨了监督学习、无监督学习和强化学习范式。特别强调了分类和回归问题之间的区别。',
+      keyFormulas: [
+        'Supervised learning uses labeled data to train models for prediction tasks.',
+        'Neural networks use backpropagation to calculate gradients and update weights during training.',
+        'Gradient descent is essential for minimizing loss functions and optimizing model parameters.'
+      ]
+    },
+    'Lecture 4': {
+      mainTopic: 'Software engineering principles and design patterns were the main topics. We learned about SOLID principles, dependency injection, and the importance of writing maintainable code. Code reviews and testing strategies were also emphasized.',
+      mainTopicChinese: '软件工程原则和设计模式是主要话题。我们学习了SOLID原则、依赖注入以及编写可维护代码的重要性。还强调了代码审查和测试策略。',
+      keyFormulas: [
+        'SOLID principles: Single Responsibility, Open-Closed, Liskov Substitution, Interface Segregation, Dependency Inversion.',
+        'Agile methodologies include sprint planning, daily standups, and retrospectives for iterative development.',
+        'Test-driven development (TDD) improves code quality and reduces bugs through early testing.'
+      ]
+    },
+    'Lecture 5': {
+      mainTopic: 'Cloud computing and distributed systems were covered extensively. We discussed microservices architecture, containerization with Docker, and orchestration with Kubernetes. Scalability and fault tolerance are key considerations.',
+      mainTopicChinese: '广泛讨论了云计算和分布式系统。我们讨论了微服务架构、使用Docker的容器化以及使用Kubernetes的编排。可扩展性和容错性是关键考虑因素。',
+      keyFormulas: [
+        'Microservices architecture breaks applications into small, independent services for better scalability.',
+        'Docker containers provide consistent environments across development, testing, and production.',
+        'The CAP theorem states distributed systems can only guarantee two of: Consistency, Availability, Partition tolerance.'
+      ]
+    }
+  };
+
   // Get notes for current lecture, default to Lecture 1 if not found
   const currentNotes = notesData[lectureTitle] || notesData['Lecture 1'];
+  const currentSummary = summaryData[lectureTitle] || summaryData['Lecture 1'];
 
   // Header Component
   const Header = () => (
@@ -252,32 +303,95 @@ export default function NoteDetailScreen({ route, navigation }) {
 
         {/* Tab Section */}
         <View style={styles.tabSection}>
-          <TouchableOpacity style={styles.tab}>
-            <Text style={styles.tabText}>Summary</Text>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'Summary' && styles.tabActive]}
+            onPress={() => setActiveTab('Summary')}
+          >
+            <Text style={[styles.tabText, activeTab === 'Summary' && styles.tabTextActive]}>Summary</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.tab, styles.tabActive]}>
-            <Text style={[styles.tabText, styles.tabTextActive]}>Transcript</Text>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'Transcript' && styles.tabActive]}
+            onPress={() => setActiveTab('Transcript')}
+          >
+            <Text style={[styles.tabText, activeTab === 'Transcript' && styles.tabTextActive]}>Transcript</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.tab}>
-            <Text style={styles.tabText}>Note</Text>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'Note' && styles.tabActive]}
+            onPress={() => setActiveTab('Note')}
+          >
+            <Text style={[styles.tabText, activeTab === 'Note' && styles.tabTextActive]}>Note</Text>
           </TouchableOpacity>
         </View>
 
         {/* Divider */}
         <View style={styles.divider} />
 
-        {/* Transcript Header with Auto Translate */}
-        <View style={styles.transcriptHeader}>
-          <Text style={styles.transcriptTitle}>Transcript:</Text>
-          <AutoTranslateToggle />
-        </View>
+        {/* Summary Content */}
+        {activeTab === 'Summary' && (
+          <View style={styles.summaryContainer}>
+            {/* Summary Header */}
+            <View style={styles.summaryHeader}>
+              <Text style={styles.summaryTitle}>Summary:</Text>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('LanguageSelection', {
+                  currentLanguage: selectedLanguage
+                })}
+              >
+                <MaterialCommunityIcons name="web" size={24} color="#E8504C" />
+              </TouchableOpacity>
+            </View>
 
-        {/* Notes Content */}
-        <View style={styles.notesContent}>
-          {currentNotes.map((note) => (
-            <NoteEntry key={note.id} note={note} />
-          ))}
-        </View>
+            {/* Main Topic Section */}
+            <View style={styles.summarySection}>
+              <Text style={styles.sectionTitle}>Main Topic :</Text>
+              <Text style={styles.mainTopicText}>
+                <Text style={styles.boldLabel}>E : </Text>
+                {currentSummary.mainTopic}
+              </Text>
+              {autoTranslate && (
+                <Text style={styles.chineseText}>
+                  中：{currentSummary.mainTopicChinese}
+                </Text>
+              )}
+            </View>
+
+            {/* Key Formula Section */}
+            <View style={styles.summarySection}>
+              <Text style={styles.sectionTitle}>Key Formula :</Text>
+              {currentSummary.keyFormulas.map((formula, index) => (
+                <View key={index} style={styles.formulaItem}>
+                  <Text style={styles.formulaNumber}>{index + 1}. </Text>
+                  <Text style={styles.formulaText}>{formula}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Transcript Content */}
+        {activeTab === 'Transcript' && (
+          <>
+            {/* Transcript Header with Auto Translate */}
+            <View style={styles.transcriptHeader}>
+              <Text style={styles.transcriptTitle}>Transcript:</Text>
+              <AutoTranslateToggle />
+            </View>
+
+            {/* Notes Content */}
+            <View style={styles.notesContent}>
+              {currentNotes.map((note) => (
+                <NoteEntry key={note.id} note={note} />
+              ))}
+            </View>
+          </>
+        )}
+
+        {/* Note Content (Placeholder) */}
+        {activeTab === 'Note' && (
+          <View style={styles.noteContainer}>
+            <Text style={styles.placeholderText}>Note feature coming soon...</Text>
+          </View>
+        )}
 
         {/* Bottom spacing for navigation bar */}
         <View style={styles.bottomSpacer} />
@@ -427,6 +541,70 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#000',
     fontWeight: '500',
+  },
+
+  // Summary Styles
+  summaryContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  summaryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  summaryTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FF9800',
+  },
+  summarySection: {
+    marginBottom: 25,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FF9800',
+    marginBottom: 10,
+  },
+  mainTopicText: {
+    fontSize: 14,
+    color: '#000',
+    lineHeight: 22,
+    marginBottom: 8,
+  },
+  boldLabel: {
+    fontWeight: 'bold',
+  },
+  formulaItem: {
+    flexDirection: 'row',
+    marginBottom: 12,
+    paddingLeft: 5,
+  },
+  formulaNumber: {
+    fontSize: 14,
+    color: '#000',
+    fontWeight: '600',
+    marginRight: 5,
+  },
+  formulaText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#000',
+    lineHeight: 20,
+  },
+
+  // Note Placeholder
+  noteContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 40,
+    alignItems: 'center',
+  },
+  placeholderText: {
+    fontSize: 16,
+    color: '#999',
+    fontStyle: 'italic',
   },
 
   // Notes Content
