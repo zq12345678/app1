@@ -44,9 +44,9 @@ export default function FolderDetailScreen({ route, navigation }) {
   const LectureItem = ({ item }) => {
     if (item.type === 'new') {
       return (
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.lectureCard}
-          onPress={() => console.log('Create new lecture')}
+          onPress={() => {/* Create new lecture functionality */}}
         >
           <View style={styles.newLectureContent}>
             <MaterialCommunityIcons name="plus" size={60} color="#7AC5F8" />

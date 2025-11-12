@@ -94,7 +94,7 @@ const RootTabNavigator = () => {
         component={PlaceholderScreen}
         options={{
           tabBarButton: () => (
-            <FloatingMicButton onPress={() => console.log('Mic pressed')} />
+            <FloatingMicButton onPress={() => {/* Microphone button pressed */}} />
           ),
         }}
       />
