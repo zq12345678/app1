@@ -1,12 +1,13 @@
 {
   "expo": {
-    "name": "suspicious-orange-cashew",
-    "slug": "snack-8062faf3-ae05-4c95-be5c-1b306bc44653",
+    "name": "Otter Notes App",
+    "slug": "otter-notes-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "main": "index.js",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
