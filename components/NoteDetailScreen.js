@@ -6,6 +6,14 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 export default function NoteDetailScreen({ route, navigation }) {
   const { lectureTitle, lectureDate, folderName } = route.params;
   const [autoTranslate, setAutoTranslate] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState('Chinese (Simplified)');
+
+  // Update selected language when returning from LanguageSelectionScreen
+  React.useEffect(() => {
+    if (route.params?.selectedLanguage) {
+      setSelectedLanguage(route.params.selectedLanguage);
+    }
+  }, [route.params?.selectedLanguage]);
 
   // Hardcoded notes data for different lectures
   const notesData = {
@@ -101,7 +109,14 @@ export default function NoteDetailScreen({ route, navigation }) {
   // Auto Translate Toggle
   const AutoTranslateToggle = () => (
     <View style={styles.toggleContainer}>
-      <MaterialCommunityIcons name="translate" size={20} color="#E8504C" />
+      <TouchableOpacity
+        onPress={() => navigation.navigate('LanguageSelection', {
+          currentLanguage: selectedLanguage
+        })}
+        style={styles.globeIconButton}
+      >
+        <MaterialCommunityIcons name="web" size={20} color="#E8504C" />
+      </TouchableOpacity>
       <Text style={styles.toggleLabel}>Auto Translate</Text>
       <Switch
         value={autoTranslate}
@@ -114,20 +129,37 @@ export default function NoteDetailScreen({ route, navigation }) {
   );
 
   // Note Entry Component
-  const NoteEntry = ({ note }) => (
-    <View style={styles.noteEntry}>
-      <View style={styles.timestampContainer}>
-        <Text style={styles.timestamp}>{note.timestamp}</Text>
-        <Text style={styles.speaker}>E : </Text>
+  const NoteEntry = ({ note }) => {
+    const getTranslationText = () => {
+      if (!autoTranslate) return null;
+
+      // Check if selected language is Chinese (Simplified or Traditional)
+      if (selectedLanguage.includes('Chinese')) {
+        return <Text style={styles.chineseText}>中：{note.chinese}</Text>;
+      } else {
+        // For other languages, show a placeholder message
+        return (
+          <Text style={styles.translationPlaceholder}>
+            Translation for {selectedLanguage} coming soon. Currently showing Chinese translation:
+            {'\n'}中：{note.chinese}
+          </Text>
+        );
+      }
+    };
+
+    return (
+      <View style={styles.noteEntry}>
+        <View style={styles.timestampContainer}>
+          <Text style={styles.timestamp}>{note.timestamp}</Text>
+          <Text style={styles.speaker}>E : </Text>
+        </View>
+        <View style={styles.textContainer}>
+          <Text style={styles.englishText}>{note.english}</Text>
+          {getTranslationText()}
+        </View>
       </View>
-      <View style={styles.textContainer}>
-        <Text style={styles.englishText}>{note.english}</Text>
-        {autoTranslate && (
-          <Text style={styles.chineseText}>中：{note.chinese}</Text>
-        )}
-      </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -326,6 +358,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
+  globeIconButton: {
+    padding: 2,
+  },
   toggleLabel: {
     fontSize: 14,
     color: '#000',
@@ -369,6 +404,13 @@ const styles = StyleSheet.create({
     color: '#E8504C',
     lineHeight: 20,
     marginTop: 5,
+  },
+  translationPlaceholder: {
+    fontSize: 13,
+    color: '#999999',
+    lineHeight: 20,
+    marginTop: 5,
+    fontStyle: 'italic',
   },
 
   // Bottom Spacer

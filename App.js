@@ -11,6 +11,7 @@ import AIChatScreen from './components/AIChatScreen';
 import StyleGuideScreen from './components/StyleGuideScreen';
 import FolderDetailScreen from './components/FolderDetailScreen';
 import NoteDetailScreen from './components/NoteDetailScreen';
+import LanguageSelectionScreen from './components/LanguageSelectionScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -32,7 +33,7 @@ const FloatingMicButton = ({ onPress }) => {
   );
 };
 
-// Home Stack Navigator (for Home, StyleGuide, FolderDetail, and NoteDetail screens)
+// Home Stack Navigator (for Home, StyleGuide, FolderDetail, NoteDetail, and LanguageSelection screens)
 const HomeStack = () => {
   return (
     <Stack.Navigator
@@ -44,6 +45,7 @@ const HomeStack = () => {
       <Stack.Screen name="StyleGuide" component={StyleGuideScreen} />
       <Stack.Screen name="FolderDetail" component={FolderDetailScreen} />
       <Stack.Screen name="NoteDetail" component={NoteDetailScreen} />
+      <Stack.Screen name="LanguageSelection" component={LanguageSelectionScreen} />
     </Stack.Navigator>
   );
 };
