@@ -1,6 +1,8 @@
 import React, { createContext, useState, useContext, useCallback } from 'react';
 import { Audio } from 'expo-av';
 import { Alert } from 'react-native';
+import * as FileSystem from 'expo-file-system';
+import { GOOGLE_API_KEY, GOOGLE_SPEECH_API_URL } from '../config/api';
 
 const RecordingContext = createContext();
 
@@ -68,24 +70,64 @@ export const RecordingProvider = ({ children }) => {
             const uri = recording.getURI();
             console.log('Context: Recording stopped and stored at', uri);
 
-            // Simulate Speech-to-Text
+            // Real Speech-to-Text using Google API
             setIsProcessing(true);
             if (transcriptionHandler) {
-                console.log('Context: Sending simulated text to handler');
-                // Simulate processing delay
-                setTimeout(() => {
-                    const simulatedText = {
-                        english: 'This is a simulated transcription from the global recording button.',
-                        simplifiedChinese: '这是来自全局录音按钮的模拟转录。',
-                        traditionalChinese: '這是來自全局錄音按鈕的模擬轉錄。',
-                        italian: 'Questa è una trascrizione simulata.',
-                        spanish: 'Esta es una trascripción simulada.',
-                        japanese: 'これはシミュレーションされた転写です。',
-                        korean: '이것은 시뮬레이션 된 전사입니다.'
-                    };
-                    transcriptionHandler(simulatedText);
+                console.log('Context: Calling Google Speech-to-Text API');
+                try {
+                    // Read audio file and convert to base64
+                    const base64Audio = await FileSystem.readAsStringAsync(uri, {
+                        encoding: FileSystem.EncodingType.Base64,
+                    });
+
+                    // Call Google Speech-to-Text API
+                    const response = await fetch(`${GOOGLE_SPEECH_API_URL}?key=${GOOGLE_API_KEY}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            config: {
+                                encoding: 'AMR_WB',
+                                sampleRateHertz: 16000,
+                                languageCode: 'zh-CN',
+                                alternativeLanguageCodes: ['en-US'],
+                            },
+                            audio: {
+                                content: base64Audio,
+                            },
+                        }),
+                    });
+
+                    const result = await response.json();
+                    console.log('Context: API response:', result);
+
+                    if (result.results && result.results.length > 0) {
+                        const transcript = result.results[0].alternatives[0].transcript;
+                        console.log('Context: Recognized text:', transcript);
+
+                        // Create text object with the recognized text
+                        const recognizedText = {
+                            english: transcript,
+                            simplifiedChinese: transcript,
+                            traditionalChinese: transcript,
+                            italian: transcript,
+                            spanish: transcript,
+                            japanese: transcript,
+                            korean: transcript
+                        };
+
+                        transcriptionHandler(recognizedText);
+                    } else {
+                        console.log('Context: No transcription results');
+                        Alert.alert('提示', '无法识别语音内容，请重试');
+                    }
                     setIsProcessing(false);
-                }, 1500);
+                } catch (error) {
+                    console.error('Context: API error:', error);
+                    Alert.alert('错误', '语音识别失败: ' + error.message);
+                    setIsProcessing(false);
+                }
             } else {
                 console.log('Context: No handler registered, text ignored');
                 console.log('Context: transcriptionHandler is:', transcriptionHandler);
