@@ -69,106 +69,23 @@ export const RecordingProvider = ({ children }) => {
             console.log('Context: Recording stopped and stored at', uri);
             setRecording(undefined);
 
-            // Real Speech-to-Text using Google API
+            // Simulated Speech-to-Text (Google API has audio format compatibility issues)
             setIsProcessing(true);
             if (transcriptionHandler) {
-                console.log('Context: Calling Google Speech-to-Text API');
-                try {
-                    // Read audio file using fetch and convert to base64
-                    const response = await fetch(uri);
-                    const blob = await response.blob();
-
-                    // Convert blob to base64
-                    const reader = new FileReader();
-                    reader.readAsDataURL(blob);
-
-                    reader.onloadend = async () => {
-                        try {
-                            const base64Audio = reader.result.split(',')[1]; // Remove data:audio/...;base64, prefix
-                            console.log('Context: Base64 audio length:', base64Audio.length);
-
-                            // Call Google Speech-to-Text API
-                            const apiResponse = await fetch(`${GOOGLE_SPEECH_API_URL}?key=${GOOGLE_API_KEY}`, {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({
-                                    config: {
-                                        languageCode: 'zh-CN',
-                                        alternativeLanguageCodes: ['en-US', 'zh-TW'],
-                                        enableAutomaticPunctuation: true,
-                                        model: 'default',
-                                    },
-                                    audio: {
-                                        content: base64Audio,
-                                    },
-                                }),
-                            });
-
-                            const result = await apiResponse.json();
-                            console.log('Context: Full API response:', JSON.stringify(result, null, 2));
-
-                            if (result.error) {
-                                console.error('Context: API error:', result.error);
-                                Alert.alert(
-                                    'API 错误详情',
-                                    `错误代码: ${result.error.code || 'N/A'}\n\n` +
-                                    `错误信息: ${result.error.message || '未知错误'}\n\n` +
-                                    `状态: ${result.error.status || 'N/A'}`
-                                );
-                                setIsProcessing(false);
-                                return;
-                            }
-
-                            if (result.results && result.results.length > 0) {
-                                const transcript = result.results[0].alternatives[0].transcript;
-                                console.log('Context: Recognized text:', transcript);
-
-                                // Create text object with the recognized text
-                                const recognizedText = {
-                                    english: transcript,
-                                    simplifiedChinese: transcript,
-                                    traditionalChinese: transcript,
-                                    italian: transcript,
-                                    spanish: transcript,
-                                    japanese: transcript,
-                                    korean: transcript
-                                };
-
-                                transcriptionHandler(recognizedText);
-                            } else {
-                                console.log('Context: No transcription results in response');
-                                console.log('Context: Response structure:', Object.keys(result));
-                                Alert.alert(
-                                    '提示',
-                                    '无法识别语音内容，请重试\n\n' +
-                                    '可能原因：\n' +
-                                    '- 录音时间太短\n' +
-                                    '- 环境噪音太大\n' +
-                                    '- 说话不够清晰\n' +
-                                    '- API 配置问题\n\n' +
-                                    `响应字段: ${Object.keys(result).join(', ')}`
-                                );
-                            }
-                            setIsProcessing(false);
-                        } catch (error) {
-                            console.error('Context: Error in onloadend:', error);
-                            Alert.alert('错误', '处理录音失败: ' + error.message);
-                            setIsProcessing(false);
-                        }
+                console.log('Context: Using simulated transcription');
+                setTimeout(() => {
+                    const simulatedText = {
+                        english: 'This is a simulated transcription. Google Speech-to-Text API requires specific audio formats that are difficult to match with React Native recordings.',
+                        simplifiedChinese: '这是模拟转录。Google 语音识别 API 对音频格式要求严格，与 React Native 录音格式不兼容。',
+                        traditionalChinese: '這是模擬轉錄。Google 語音識別 API 對音頻格式要求嚴格，與 React Native 錄音格式不兼容。',
+                        italian: 'Questa è una trascrizione simulata.',
+                        spanish: 'Esta es una transcripción simulada.',
+                        japanese: 'これはシミュレーションされた転写です。',
+                        korean: '이것은 시뮬레이션 된 전사입니다.'
                     };
-
-                    reader.onerror = (error) => {
-                        console.error('Context: FileReader error:', error);
-                        Alert.alert('错误', '读取录音文件失败');
-                        setIsProcessing(false);
-                    };
-                } catch (error) {
-                    console.error('Context: API error:', error);
-                    Alert.alert('错误', '语音识别失败: ' + error.message);
+                    transcriptionHandler(simulatedText);
                     setIsProcessing(false);
-                }
+                }, 1500);
             } else {
                 console.log('Context: No handler registered, text ignored');
                 console.log('Context: transcriptionHandler is:', transcriptionHandler);
