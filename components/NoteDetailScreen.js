@@ -9,7 +9,7 @@ export default function NoteDetailScreen({ route, navigation }) {
   const [autoTranslate, setAutoTranslate] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState('simplifiedChinese');
   const [activeTab, setActiveTab] = useState('Transcript'); // 'Summary', 'Transcript', or 'Note'
-  const { registerHandler, unregisterHandler } = useRecording();
+  const { registerHandler, unregisterHandler, isProcessing } = useRecording();
 
   // Update selected language when returning from LanguageSelectionScreen
   React.useEffect(() => {

@@ -9,6 +9,7 @@ export const useRecording = () => useContext(RecordingContext);
 export const RecordingProvider = ({ children }) => {
     const [recording, setRecording] = useState(null);
     const [isRecording, setIsRecording] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
     const [permissionResponse, requestPermission] = Audio.usePermissions();
     const [transcriptionHandler, setTranscriptionHandler] = useState(null);
 
@@ -66,6 +67,7 @@ export const RecordingProvider = ({ children }) => {
             console.log('Context: Recording stopped and stored at', uri);
 
             // Simulate Speech-to-Text
+            setIsProcessing(true);
             if (transcriptionHandler) {
                 console.log('Context: Sending simulated text to handler');
                 // Simulate processing delay
@@ -75,15 +77,17 @@ export const RecordingProvider = ({ children }) => {
                         simplifiedChinese: '这是来自全局录音按钮的模拟转录。',
                         traditionalChinese: '這是來自全局錄音按鈕的模擬轉錄。',
                         italian: 'Questa è una trascrizione simulata.',
-                        spanish: 'Esta es una transcripción simulada.',
+                        spanish: 'Esta es una trascripción simulada.',
                         japanese: 'これはシミュレーションされた転写です。',
                         korean: '이것은 시뮬레이션 된 전사입니다.'
                     };
                     transcriptionHandler(simulatedText);
+                    setIsProcessing(false);
                 }, 1500);
             } else {
                 console.log('Context: No handler registered, text ignored');
                 Alert.alert('Note', 'Recording saved, but no active note screen to receive text.');
+                setIsProcessing(false);
             }
         } catch (error) {
             console.error('Failed to stop recording', error);
@@ -101,6 +105,7 @@ export const RecordingProvider = ({ children }) => {
     return (
         <RecordingContext.Provider value={{
             isRecording,
+            isProcessing,
             toggleRecording,
             registerHandler,
             unregisterHandler
