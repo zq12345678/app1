@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -212,8 +210,8 @@ export default function NoteDetailScreen({ route, navigation }) {
       });
 
       console.log('Starting recording..');
-      const { recording } = await Audio.Recording.createAsync( 
-         Audio.RecordingOptionsPresets.HIGH_QUALITY
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
       );
       setRecording(recording);
       console.log('Recording started');
@@ -232,7 +230,7 @@ export default function NoteDetailScreen({ route, navigation }) {
     });
     const uri = recording.getURI();
     console.log('Recording stopped and stored at', uri);
-    
+
     // Simulate Speech-to-Text
     setIsProcessing(true);
     setTimeout(() => {
@@ -247,7 +245,7 @@ export default function NoteDetailScreen({ route, navigation }) {
         japanese: 'これはあなたの音声録音のシミュレーションされた転写です。',
         korean: '이것은 음성 녹음의 시뮬레이션 된 전사입니다.'
       };
-      
+
       setDisplayedNotes([...displayedNotes, newNote]);
       setIsProcessing(false);
     }, 2000);
@@ -337,8 +335,8 @@ export default function NoteDetailScreen({ route, navigation }) {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <Header />
-      
-      <ScrollView 
+
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -443,10 +441,10 @@ export default function NoteDetailScreen({ route, navigation }) {
                 <NoteEntry key={note.id} note={note} />
               ))}
               {isProcessing && (
-                 <View style={styles.processingContainer}>
-                   <ActivityIndicator size="small" color="#3B6FE8" />
-                   <Text style={styles.processingText}>Transcribing...</Text>
-                 </View>
+                <View style={styles.processingContainer}>
+                  <ActivityIndicator size="small" color="#3B6FE8" />
+                  <Text style={styles.processingText}>Transcribing...</Text>
+                </View>
               )}
             </View>
           </>
@@ -473,10 +471,10 @@ export default function NoteDetailScreen({ route, navigation }) {
             ]}
             onPress={recording ? stopRecording : startRecording}
           >
-            <MaterialCommunityIcons 
-              name={recording ? "stop" : "microphone"} 
-              size={32} 
-              color="white" 
+            <MaterialCommunityIcons
+              name={recording ? "stop" : "microphone"}
+              size={32}
+              color="white"
             />
           </TouchableOpacity>
         </View>
@@ -496,7 +494,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 100,
   },
-  
+
   // Header Styles
   header: {
     flexDirection: 'row',
@@ -735,7 +733,7 @@ const styles = StyleSheet.create({
   bottomSpacer: {
     height: 100, // Increased to make room for FAB
   },
-  
+
   // Microphone Button
   micButtonContainer: {
     position: 'absolute',
