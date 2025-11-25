@@ -83,51 +83,66 @@ export const RecordingProvider = ({ children }) => {
                     reader.readAsDataURL(blob);
 
                     reader.onloadend = async () => {
-                        const base64Audio = reader.result.split(',')[1]; // Remove data:audio/...;base64, prefix
+                        try {
+                            const base64Audio = reader.result.split(',')[1]; // Remove data:audio/...;base64, prefix
+                            console.log('Context: Base64 audio length:', base64Audio.length);
 
-                        // Call Google Speech-to-Text API
-                        const apiResponse = await fetch(`${GOOGLE_SPEECH_API_URL}?key=${GOOGLE_API_KEY}`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                config: {
-                                    encoding: 'AMR_WB',
-                                    sampleRateHertz: 16000,
-                                    languageCode: 'zh-CN',
-                                    alternativeLanguageCodes: ['en-US'],
+                            // Call Google Speech-to-Text API
+                            const apiResponse = await fetch(`${GOOGLE_SPEECH_API_URL}?key=${GOOGLE_API_KEY}`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
                                 },
-                                audio: {
-                                    content: base64Audio,
-                                },
-                            }),
-                        });
+                                body: JSON.stringify({
+                                    config: {
+                                        encoding: 'LINEAR16',
+                                        sampleRateHertz: 44100,
+                                        languageCode: 'zh-CN',
+                                        alternativeLanguageCodes: ['en-US'],
+                                        enableAutomaticPunctuation: true,
+                                    },
+                                    audio: {
+                                        content: base64Audio,
+                                    },
+                                }),
+                            });
 
-                        const result = await apiResponse.json();
-                        console.log('Context: API response:', result);
+                            const result = await apiResponse.json();
+                            console.log('Context: Full API response:', JSON.stringify(result, null, 2));
 
-                        if (result.results && result.results.length > 0) {
-                            const transcript = result.results[0].alternatives[0].transcript;
-                            console.log('Context: Recognized text:', transcript);
+                            if (result.error) {
+                                console.error('Context: API error:', result.error);
+                                Alert.alert('API 错误', result.error.message || '未知错误');
+                                setIsProcessing(false);
+                                return;
+                            }
 
-                            // Create text object with the recognized text
-                            const recognizedText = {
-                                english: transcript,
-                                simplifiedChinese: transcript,
-                                traditionalChinese: transcript,
-                                italian: transcript,
-                                spanish: transcript,
-                                japanese: transcript,
-                                korean: transcript
-                            };
+                            if (result.results && result.results.length > 0) {
+                                const transcript = result.results[0].alternatives[0].transcript;
+                                console.log('Context: Recognized text:', transcript);
 
-                            transcriptionHandler(recognizedText);
-                        } else {
-                            console.log('Context: No transcription results');
-                            Alert.alert('提示', '无法识别语音内容，请重试');
+                                // Create text object with the recognized text
+                                const recognizedText = {
+                                    english: transcript,
+                                    simplifiedChinese: transcript,
+                                    traditionalChinese: transcript,
+                                    italian: transcript,
+                                    spanish: transcript,
+                                    japanese: transcript,
+                                    korean: transcript
+                                };
+
+                                transcriptionHandler(recognizedText);
+                            } else {
+                                console.log('Context: No transcription results in response');
+                                Alert.alert('提示', '无法识别语音内容，请重试\n\n可能原因：\n- 录音时间太短\n- 环境噪音太大\n- 说话不够清晰');
+                            }
+                            setIsProcessing(false);
+                        } catch (error) {
+                            console.error('Context: Error in onloadend:', error);
+                            Alert.alert('错误', '处理录音失败: ' + error.message);
+                            setIsProcessing(false);
                         }
-                        setIsProcessing(false);
                     };
 
                     reader.onerror = (error) => {
