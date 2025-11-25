@@ -200,10 +200,15 @@ export default function NoteDetailScreen({ route, navigation }) {
 
   async function startRecording() {
     try {
-      if (permissionResponse.status !== 'granted') {
-        console.log('Requesting permission..');
-        await requestPermission();
+      console.log('Requesting permissions..');
+      if (!permissionResponse || permissionResponse.status !== 'granted') {
+        const perm = await requestPermission();
+        if (perm.status !== 'granted') {
+          Alert.alert('Permission needed', 'Please grant microphone permission to record audio.');
+          return;
+        }
       }
+
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
@@ -217,7 +222,7 @@ export default function NoteDetailScreen({ route, navigation }) {
       console.log('Recording started');
     } catch (err) {
       console.error('Failed to start recording', err);
-      Alert.alert('Error', 'Failed to start recording');
+      Alert.alert('Error', 'Failed to start recording: ' + err.message);
     }
   }
 
