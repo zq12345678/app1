@@ -95,11 +95,10 @@ export const RecordingProvider = ({ children }) => {
                                 },
                                 body: JSON.stringify({
                                     config: {
-                                        encoding: 'LINEAR16',
-                                        sampleRateHertz: 44100,
                                         languageCode: 'zh-CN',
-                                        alternativeLanguageCodes: ['en-US'],
+                                        alternativeLanguageCodes: ['en-US', 'zh-TW'],
                                         enableAutomaticPunctuation: true,
+                                        model: 'default',
                                     },
                                     audio: {
                                         content: base64Audio,
