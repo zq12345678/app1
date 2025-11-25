@@ -747,6 +747,7 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 999,
   },
   micButton: {
     width: 70,
