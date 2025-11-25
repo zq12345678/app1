@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useCallback } from 'react';
 import { Audio } from 'expo-av';
 import { Alert } from 'react-native';
 
@@ -14,13 +14,15 @@ export const RecordingProvider = ({ children }) => {
     const [transcriptionHandler, setTranscriptionHandler] = useState(null);
 
     // Register a handler to receive the transcribed text
-    const registerHandler = (handler) => {
+    const registerHandler = useCallback((handler) => {
+        console.log('Context: Registering handler');
         setTranscriptionHandler(() => handler);
-    };
+    }, []);
 
-    const unregisterHandler = () => {
+    const unregisterHandler = useCallback(() => {
+        console.log('Context: Unregistering handler');
         setTranscriptionHandler(null);
-    };
+    }, []);
 
     async function startRecording() {
         try {
@@ -86,6 +88,7 @@ export const RecordingProvider = ({ children }) => {
                 }, 1500);
             } else {
                 console.log('Context: No handler registered, text ignored');
+                console.log('Context: transcriptionHandler is:', transcriptionHandler);
                 Alert.alert('Note', 'Recording saved, but no active note screen to receive text.');
                 setIsProcessing(false);
             }

@@ -198,13 +198,16 @@ export default function NoteDetailScreen({ route, navigation }) {
 
   // Register handler for recording context
   React.useEffect(() => {
+    console.log('NoteDetailScreen: Registering transcription handler');
     const handleTranscription = (text) => {
+      console.log('NoteDetailScreen: Received transcription:', text);
       setDisplayedNotes(prev => {
         const newNote = {
           id: prev.length + 1,
           timestamp: 'New',
           ...text
         };
+        console.log('NoteDetailScreen: Adding new note:', newNote);
         return [...prev, newNote];
       });
     };
@@ -212,6 +215,7 @@ export default function NoteDetailScreen({ route, navigation }) {
     registerHandler(handleTranscription);
 
     return () => {
+      console.log('NoteDetailScreen: Unregistering handler');
       unregisterHandler();
     };
   }, []); // Empty dependency array - only register once on mount
