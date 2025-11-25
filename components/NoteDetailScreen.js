@@ -2,16 +2,14 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Audio } from 'expo-av';
+import { useRecording } from '../contexts/RecordingContext';
 
 export default function NoteDetailScreen({ route, navigation }) {
   const { lectureTitle, lectureDate, folderName } = route.params;
   const [autoTranslate, setAutoTranslate] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState('simplifiedChinese');
   const [activeTab, setActiveTab] = useState('Transcript'); // 'Summary', 'Transcript', or 'Note'
-  const [recording, setRecording] = useState(null);
-  const [permissionResponse, requestPermission] = Audio.usePermissions();
-  const [isProcessing, setIsProcessing] = useState(false);
+  const { registerHandler, unregisterHandler } = useRecording();
 
   // Update selected language when returning from LanguageSelectionScreen
   React.useEffect(() => {
@@ -198,63 +196,23 @@ export default function NoteDetailScreen({ route, navigation }) {
   const [displayedNotes, setDisplayedNotes] = useState(initialNotes);
   const currentSummary = summaryData[lectureTitle] || summaryData['Lecture 1'];
 
-  async function startRecording() {
-    try {
-      console.log('Requesting permissions..');
-      if (!permissionResponse || permissionResponse.status !== 'granted') {
-        const perm = await requestPermission();
-        if (perm.status !== 'granted') {
-          Alert.alert('Permission needed', 'Please grant microphone permission to record audio.');
-          return;
-        }
-      }
-
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-      });
-
-      console.log('Starting recording..');
-      const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
-      setRecording(recording);
-      console.log('Recording started');
-    } catch (err) {
-      console.error('Failed to start recording', err);
-      Alert.alert('Error', 'Failed to start recording: ' + err.message);
-    }
-  }
-
-  async function stopRecording() {
-    console.log('Stopping recording..');
-    setRecording(undefined);
-    await recording.stopAndUnloadAsync();
-    await Audio.setAudioModeAsync({
-      allowsRecordingIOS: false,
-    });
-    const uri = recording.getURI();
-    console.log('Recording stopped and stored at', uri);
-
-    // Simulate Speech-to-Text
-    setIsProcessing(true);
-    setTimeout(() => {
+  // Register handler for recording context
+  React.useEffect(() => {
+    const handleTranscription = (text) => {
       const newNote = {
         id: displayedNotes.length + 1,
-        timestamp: 'New', // In a real app, calculate actual timestamp
-        english: 'This is a simulated transcription of your voice recording. In a real application, we would send the audio file to an API like OpenAI Whisper to get the actual text.',
-        simplifiedChinese: '这是您语音录音的模拟转录。在实际应用中，我们会将音频文件发送到像 OpenAI Whisper 这样的 API 以获取实际文本。',
-        traditionalChinese: '這是您語音錄音的模擬轉錄。在實際應用中，我們會將音頻文件發送到像 OpenAI Whisper 這樣的 API 以獲取實際文本。',
-        italian: 'Questa è una trascrizione simulata della tua registrazione vocale.',
-        spanish: 'Esta es una transcripción simulada de su grabación de voz.',
-        japanese: 'これはあなたの音声録音のシミュレーションされた転写です。',
-        korean: '이것은 음성 녹음의 시뮬레이션 된 전사입니다.'
+        timestamp: 'New',
+        ...text
       };
+      setDisplayedNotes(prev => [...prev, newNote]);
+    };
 
-      setDisplayedNotes([...displayedNotes, newNote]);
-      setIsProcessing(false);
-    }, 2000);
-  }
+    registerHandler(handleTranscription);
+
+    return () => {
+      unregisterHandler();
+    };
+  }, [displayedNotes, registerHandler, unregisterHandler]);
 
   // Header Component
   const Header = () => (
@@ -736,7 +694,7 @@ const styles = StyleSheet.create({
 
   // Bottom Spacer
   bottomSpacer: {
-    height: 100, // Increased to make room for FAB
+    height: 20,
   },
 
   // Microphone Button
@@ -780,4 +738,3 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
-

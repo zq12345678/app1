@@ -12,6 +12,7 @@ import StyleGuideScreen from './components/StyleGuideScreen';
 import FolderDetailScreen from './components/FolderDetailScreen';
 import NoteDetailScreen from './components/NoteDetailScreen';
 import LanguageSelectionScreen from './components/LanguageSelectionScreen';
+import { RecordingProvider, useRecording } from './contexts/RecordingContext';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -22,13 +23,22 @@ const PlaceholderScreen = () => {
 };
 
 // Floating Microphone Button Component
-const FloatingMicButton = ({ onPress }) => {
+const FloatingMicButton = () => {
+  const { isRecording, toggleRecording } = useRecording();
+
   return (
     <TouchableOpacity
-      style={styles.floatingMicButton}
-      onPress={onPress}
+      style={[
+        styles.floatingMicButton,
+        isRecording && styles.floatingMicButtonRecording
+      ]}
+      onPress={toggleRecording}
     >
-      <MaterialCommunityIcons name="microphone" size={32} color="white" />
+      <MaterialCommunityIcons
+        name={isRecording ? "stop" : "microphone"}
+        size={32}
+        color="white"
+      />
     </TouchableOpacity>
   );
 };
@@ -94,7 +104,7 @@ const RootTabNavigator = () => {
         component={PlaceholderScreen}
         options={{
           tabBarButton: () => (
-            <FloatingMicButton onPress={() => {/* Microphone button pressed */}} />
+            <FloatingMicButton />
           ),
         }}
       />
@@ -124,9 +134,11 @@ const RootTabNavigator = () => {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <NavigationContainer>
-        <RootTabNavigator />
-      </NavigationContainer>
+      <RecordingProvider>
+        <NavigationContainer>
+          <RootTabNavigator />
+        </NavigationContainer>
+      </RecordingProvider>
     </SafeAreaProvider>
   );
 }
@@ -150,6 +162,9 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     borderWidth: 4,
     borderColor: 'white',
+  },
+  floatingMicButtonRecording: {
+    backgroundColor: '#E8504C',
   },
   tabItem: {
     alignItems: 'center',
