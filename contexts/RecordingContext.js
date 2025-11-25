@@ -112,7 +112,12 @@ export const RecordingProvider = ({ children }) => {
 
                             if (result.error) {
                                 console.error('Context: API error:', result.error);
-                                Alert.alert('API 错误', result.error.message || '未知错误');
+                                Alert.alert(
+                                    'API 错误详情',
+                                    `错误代码: ${result.error.code || 'N/A'}\n\n` +
+                                    `错误信息: ${result.error.message || '未知错误'}\n\n` +
+                                    `状态: ${result.error.status || 'N/A'}`
+                                );
                                 setIsProcessing(false);
                                 return;
                             }
@@ -135,7 +140,17 @@ export const RecordingProvider = ({ children }) => {
                                 transcriptionHandler(recognizedText);
                             } else {
                                 console.log('Context: No transcription results in response');
-                                Alert.alert('提示', '无法识别语音内容，请重试\n\n可能原因：\n- 录音时间太短\n- 环境噪音太大\n- 说话不够清晰');
+                                console.log('Context: Response structure:', Object.keys(result));
+                                Alert.alert(
+                                    '提示',
+                                    '无法识别语音内容，请重试\n\n' +
+                                    '可能原因：\n' +
+                                    '- 录音时间太短\n' +
+                                    '- 环境噪音太大\n' +
+                                    '- 说话不够清晰\n' +
+                                    '- API 配置问题\n\n' +
+                                    `响应字段: ${Object.keys(result).join(', ')}`
+                                );
                             }
                             setIsProcessing(false);
                         } catch (error) {
