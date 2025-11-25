@@ -423,25 +423,6 @@ export default function NoteDetailScreen({ route, navigation }) {
         {/* Bottom spacing for navigation bar */}
         <View style={styles.bottomSpacer} />
       </ScrollView>
-
-      {/* Floating Microphone Button */}
-      {activeTab === 'Transcript' && (
-        <View style={styles.micButtonContainer}>
-          <TouchableOpacity
-            style={[
-              styles.micButton,
-              recording ? styles.micButtonRecording : null
-            ]}
-            onPress={recording ? stopRecording : startRecording}
-          >
-            <MaterialCommunityIcons
-              name={recording ? "stop" : "microphone"}
-              size={32}
-              color="white"
-            />
-          </TouchableOpacity>
-        </View>
-      )}
     </SafeAreaView>
   );
 }
@@ -697,35 +678,6 @@ const styles = StyleSheet.create({
     height: 20,
   },
 
-  // Microphone Button
-  micButtonContainer: {
-    position: 'absolute',
-    bottom: 30,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 999,
-  },
-  micButton: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: '#3B6FE8',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.30,
-    shadowRadius: 4.65,
-    elevation: 8,
-  },
-  micButtonRecording: {
-    backgroundColor: '#E8504C', // Red when recording
-  },
   processingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
