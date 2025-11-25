@@ -1,13 +1,19 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, ActivityIndicator, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Audio } from 'expo-av';
 
 export default function NoteDetailScreen({ route, navigation }) {
   const { lectureTitle, lectureDate, folderName } = route.params;
   const [autoTranslate, setAutoTranslate] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState('simplifiedChinese');
   const [activeTab, setActiveTab] = useState('Transcript'); // 'Summary', 'Transcript', or 'Note'
+  const [recording, setRecording] = useState(null);
+  const [permissionResponse, requestPermission] = Audio.usePermissions();
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Update selected language when returning from LanguageSelectionScreen
   React.useEffect(() => {
@@ -190,8 +196,62 @@ export default function NoteDetailScreen({ route, navigation }) {
   };
 
   // Get notes for current lecture, default to Lecture 1 if not found
-  const currentNotes = notesData[lectureTitle] || notesData['Lecture 1'];
+  const initialNotes = notesData[lectureTitle] || notesData['Lecture 1'];
+  const [displayedNotes, setDisplayedNotes] = useState(initialNotes);
   const currentSummary = summaryData[lectureTitle] || summaryData['Lecture 1'];
+
+  async function startRecording() {
+    try {
+      if (permissionResponse.status !== 'granted') {
+        console.log('Requesting permission..');
+        await requestPermission();
+      }
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      console.log('Starting recording..');
+      const { recording } = await Audio.Recording.createAsync( 
+         Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      setRecording(recording);
+      console.log('Recording started');
+    } catch (err) {
+      console.error('Failed to start recording', err);
+      Alert.alert('Error', 'Failed to start recording');
+    }
+  }
+
+  async function stopRecording() {
+    console.log('Stopping recording..');
+    setRecording(undefined);
+    await recording.stopAndUnloadAsync();
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+    });
+    const uri = recording.getURI();
+    console.log('Recording stopped and stored at', uri);
+    
+    // Simulate Speech-to-Text
+    setIsProcessing(true);
+    setTimeout(() => {
+      const newNote = {
+        id: displayedNotes.length + 1,
+        timestamp: 'New', // In a real app, calculate actual timestamp
+        english: 'This is a simulated transcription of your voice recording. In a real application, we would send the audio file to an API like OpenAI Whisper to get the actual text.',
+        simplifiedChinese: '这是您语音录音的模拟转录。在实际应用中，我们会将音频文件发送到像 OpenAI Whisper 这样的 API 以获取实际文本。',
+        traditionalChinese: '這是您語音錄音的模擬轉錄。在實際應用中，我們會將音頻文件發送到像 OpenAI Whisper 這樣的 API 以獲取實際文本。',
+        italian: 'Questa è una trascrizione simulata della tua registrazione vocale.',
+        spanish: 'Esta es una transcripción simulada de su grabación de voz.',
+        japanese: 'これはあなたの音声録音のシミュレーションされた転写です。',
+        korean: '이것은 음성 녹음의 시뮬레이션 된 전사입니다.'
+      };
+      
+      setDisplayedNotes([...displayedNotes, newNote]);
+      setIsProcessing(false);
+    }, 2000);
+  }
 
   // Header Component
   const Header = () => (
@@ -379,9 +439,15 @@ export default function NoteDetailScreen({ route, navigation }) {
 
             {/* Notes Content */}
             <View style={styles.notesContent}>
-              {currentNotes.map((note) => (
+              {displayedNotes.map((note) => (
                 <NoteEntry key={note.id} note={note} />
               ))}
+              {isProcessing && (
+                 <View style={styles.processingContainer}>
+                   <ActivityIndicator size="small" color="#3B6FE8" />
+                   <Text style={styles.processingText}>Transcribing...</Text>
+                 </View>
+              )}
             </View>
           </>
         )}
@@ -396,6 +462,25 @@ export default function NoteDetailScreen({ route, navigation }) {
         {/* Bottom spacing for navigation bar */}
         <View style={styles.bottomSpacer} />
       </ScrollView>
+
+      {/* Floating Microphone Button */}
+      {activeTab === 'Transcript' && (
+        <View style={styles.micButtonContainer}>
+          <TouchableOpacity
+            style={[
+              styles.micButton,
+              recording ? styles.micButtonRecording : null
+            ]}
+            onPress={recording ? stopRecording : startRecording}
+          >
+            <MaterialCommunityIcons 
+              name={recording ? "stop" : "microphone"} 
+              size={32} 
+              color="white" 
+            />
+          </TouchableOpacity>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -648,7 +733,47 @@ const styles = StyleSheet.create({
 
   // Bottom Spacer
   bottomSpacer: {
-    height: 20,
+    height: 100, // Increased to make room for FAB
+  },
+  
+  // Microphone Button
+  micButtonContainer: {
+    position: 'absolute',
+    bottom: 30,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  micButton: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: '#3B6FE8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.30,
+    shadowRadius: 4.65,
+    elevation: 8,
+  },
+  micButtonRecording: {
+    backgroundColor: '#E8504C', // Red when recording
+  },
+  processingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+    gap: 10,
+  },
+  processingText: {
+    color: '#666',
+    fontSize: 14,
   },
 });
 
