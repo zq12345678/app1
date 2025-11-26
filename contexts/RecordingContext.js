@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useCallback } from 'react';
 import { Audio } from 'expo-av';
 import { Alert } from 'react-native';
+import * as FileSystem from 'expo-file-system';
 import { GOOGLE_API_KEY, GOOGLE_SPEECH_API_URL } from '../config/api';
 
 const RecordingContext = createContext();
@@ -42,12 +43,33 @@ export const RecordingProvider = ({ children }) => {
             });
 
             console.log('Context: Starting recording..');
-            const { recording } = await Audio.Recording.createAsync(
-                Audio.RecordingOptionsPresets.HIGH_QUALITY
-            );
+            // 使用 LINEAR16 (PCM) 格式，Google Speech API 支持此格式
+            const recordingOptions = {
+                android: {
+                    extension: '.wav',
+                    outputFormat: Audio.AndroidOutputFormat.DEFAULT,
+                    audioEncoder: Audio.AndroidAudioEncoder.DEFAULT,
+                    sampleRate: 16000,
+                    numberOfChannels: 1,
+                    bitRate: 128000,
+                },
+                ios: {
+                    extension: '.wav',
+                    outputFormat: Audio.IOSOutputFormat.LINEARPCM,
+                    audioQuality: Audio.IOSAudioQuality.HIGH,
+                    sampleRate: 16000,
+                    numberOfChannels: 1,
+                    bitRate: 128000,
+                    linearPCMBitDepth: 16,
+                    linearPCMIsBigEndian: false,
+                    linearPCMIsFloat: false,
+                },
+            };
+
+            const { recording } = await Audio.Recording.createAsync(recordingOptions);
             setRecording(recording);
             setIsRecording(true);
-            console.log('Context: Recording started');
+            console.log('Context: Recording started with LINEAR16 format');
         } catch (err) {
             console.error('Failed to start recording', err);
             Alert.alert('Error', 'Failed to start recording: ' + err.message);
@@ -69,27 +91,90 @@ export const RecordingProvider = ({ children }) => {
             console.log('Context: Recording stopped and stored at', uri);
             setRecording(undefined);
 
-            // Simulated Speech-to-Text (Google API has audio format compatibility issues)
+            // 使用 Google Speech-to-Text API 进行真实语音识别
             setIsProcessing(true);
             if (transcriptionHandler) {
-                console.log('Context: Using simulated transcription');
-                setTimeout(() => {
-                    const simulatedText = {
-                        english: 'This is a simulated transcription. Google Speech-to-Text API requires specific audio formats that are difficult to match with React Native recordings.',
-                        simplifiedChinese: '这是模拟转录。Google 语音识别 API 对音频格式要求严格，与 React Native 录音格式不兼容。',
-                        traditionalChinese: '這是模擬轉錄。Google 語音識別 API 對音頻格式要求嚴格，與 React Native 錄音格式不兼容。',
-                        italian: 'Questa è una trascrizione simulata.',
-                        spanish: 'Esta es una transcripción simulada.',
-                        japanese: 'これはシミュレーションされた転写です。',
-                        korean: '이것은 시뮬레이션 된 전사입니다.'
-                    };
-                    transcriptionHandler(simulatedText);
+                console.log('Context: Calling Google Speech-to-Text API');
+                try {
+                    // 读取音频文件并转换为 base64
+                    const base64Audio = await FileSystem.readAsStringAsync(uri, {
+                        encoding: FileSystem.EncodingType.Base64,
+                    });
+                    console.log('Context: Base64 audio length:', base64Audio.length);
+
+                    // 调用 Google Speech-to-Text API
+                    const response = await fetch(`${GOOGLE_SPEECH_API_URL}?key=${GOOGLE_API_KEY}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            config: {
+                                encoding: 'LINEAR16',  // 明确指定 LINEAR16 编码
+                                sampleRateHertz: 16000,
+                                languageCode: 'zh-CN',
+                                alternativeLanguageCodes: ['en-US', 'zh-TW'],
+                                enableAutomaticPunctuation: true,
+                            },
+                            audio: {
+                                content: base64Audio,
+                            },
+                        }),
+                    });
+
+                    const result = await response.json();
+                    console.log('Context: API response:', JSON.stringify(result, null, 2));
+
+                    // 检查 API 错误
+                    if (result.error) {
+                        console.error('Context: API error:', result.error);
+                        Alert.alert(
+                            'API 错误',
+                            `错误代码: ${result.error.code || 'N/A'}\n\n` +
+                            `错误信息: ${result.error.message || '未知错误'}\n\n` +
+                            `状态: ${result.error.status || 'N/A'}`
+                        );
+                        setIsProcessing(false);
+                        return;
+                    }
+
+                    // 处理识别结果
+                    if (result.results && result.results.length > 0) {
+                        const transcript = result.results[0].alternatives[0].transcript;
+                        console.log('Context: Recognized text:', transcript);
+
+                        // 创建多语言文本对象（实际应用中可以调用翻译 API）
+                        const recognizedText = {
+                            english: transcript,
+                            simplifiedChinese: transcript,
+                            traditionalChinese: transcript,
+                            italian: transcript,
+                            spanish: transcript,
+                            japanese: transcript,
+                            korean: transcript
+                        };
+
+                        transcriptionHandler(recognizedText);
+                    } else {
+                        console.log('Context: No transcription results');
+                        Alert.alert(
+                            '提示',
+                            '无法识别语音内容，请重试\n\n' +
+                            '可能原因：\n' +
+                            '- 录音时间太短\n' +
+                            '- 环境噪音太大\n' +
+                            '- 说话不够清晰'
+                        );
+                    }
                     setIsProcessing(false);
-                }, 1500);
+                } catch (error) {
+                    console.error('Context: API error:', error);
+                    Alert.alert('错误', '语音识别失败: ' + error.message);
+                    setIsProcessing(false);
+                }
             } else {
-                console.log('Context: No handler registered, text ignored');
-                console.log('Context: transcriptionHandler is:', transcriptionHandler);
-                Alert.alert('Note', 'Recording saved, but no active note screen to receive text.');
+                console.log('Context: No handler registered');
+                Alert.alert('提示', '录音已保存，但没有活动的笔记页面接收文本');
                 setIsProcessing(false);
             }
         } catch (error) {
