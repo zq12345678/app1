@@ -1,12 +1,32 @@
 import React, { createContext, useState, useContext, useCallback } from 'react';
 import { Audio } from 'expo-av';
-import { Alert } from 'react-native';
-import * as FileSystem from 'expo-file-system';
+import { Alert, Platform } from 'react-native';
 import { GOOGLE_API_KEY, GOOGLE_SPEECH_API_URL } from '../config/api';
 
 const RecordingContext = createContext();
 
 export const useRecording = () => useContext(RecordingContext);
+
+// 辅助函数：读取音频文件并转换为 base64
+async function readAudioFileAsBase64(uri) {
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.onload = function() {
+            const reader = new FileReader();
+            reader.onloadend = function() {
+                // 移除 data URL 前缀，只保留 base64 数据
+                const base64 = reader.result.split(',')[1];
+                resolve(base64);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(xhr.response);
+        };
+        xhr.onerror = reject;
+        xhr.responseType = 'blob';
+        xhr.open('GET', uri, true);
+        xhr.send(null);
+    });
+}
 
 export const RecordingProvider = ({ children }) => {
     const [recording, setRecording] = useState(null);
@@ -97,9 +117,7 @@ export const RecordingProvider = ({ children }) => {
                 console.log('Context: Calling Google Speech-to-Text API');
                 try {
                     // 读取音频文件并转换为 base64
-                    const base64Audio = await FileSystem.readAsStringAsync(uri, {
-                        encoding: FileSystem.EncodingType.Base64,
-                    });
+                    const base64Audio = await readAudioFileAsBase64(uri);
                     console.log('Context: Base64 audio length:', base64Audio.length);
 
                     // 调用 Google Speech-to-Text API
