@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -12,7 +12,10 @@ import StyleGuideScreen from './components/StyleGuideScreen';
 import FolderDetailScreen from './components/FolderDetailScreen';
 import NoteDetailScreen from './components/NoteDetailScreen';
 import LanguageSelectionScreen from './components/LanguageSelectionScreen';
+import LoginScreen from './components/LoginScreen';
+import RegisterScreen from './components/RegisterScreen';
 import { RecordingProvider, useRecording } from './contexts/RecordingContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -130,15 +133,58 @@ const RootTabNavigator = () => {
   );
 };
 
+// Auth Stack Navigator (for Login and Register screens)
+const AuthStack = () => {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Register" component={RegisterScreen} />
+    </Stack.Navigator>
+  );
+};
+
+// Loading Screen Component
+const LoadingScreen = () => {
+  return (
+    <View style={styles.loadingScreen}>
+      <View style={styles.logoContainer}>
+        <View style={styles.logoCircle1} />
+        <View style={styles.logoCircle2} />
+        <View style={styles.logoCircle3} />
+        <Text style={styles.logoText}>Otter</Text>
+      </View>
+      <ActivityIndicator size="large" color="#3B6FE8" style={{ marginTop: 20 }} />
+      <Text style={styles.loadingText}>Loading...</Text>
+    </View>
+  );
+};
+
+// App Navigator Component (decides between Auth and Main app)
+const AppNavigator = () => {
+  const { user, loading, isInitialized } = useAuth();
+
+  if (loading || !isInitialized) {
+    return <LoadingScreen />;
+  }
+
+  return user ? <RootTabNavigator /> : <AuthStack />;
+};
+
 // Main App Component
 export default function App() {
   return (
     <SafeAreaProvider>
-      <RecordingProvider>
-        <NavigationContainer>
-          <RootTabNavigator />
-        </NavigationContainer>
-      </RecordingProvider>
+      <AuthProvider>
+        <RecordingProvider>
+          <NavigationContainer>
+            <AppNavigator />
+          </NavigationContainer>
+        </RecordingProvider>
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }
@@ -178,5 +224,46 @@ const styles = StyleSheet.create({
     marginTop: 3,
     fontWeight: '500',
     textAlign: 'center',
+  },
+  loadingScreen: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  logoCircle1: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#3B6FE8',
+    marginRight: 4,
+  },
+  logoCircle2: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#5B8FFF',
+    marginRight: 4,
+  },
+  logoCircle3: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#7BA5FF',
+    marginRight: 8,
+  },
+  logoText: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
+    marginTop: 12,
   },
 });
