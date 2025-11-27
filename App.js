@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ActivityIndicator, Platform, Alert } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -16,6 +16,7 @@ import LoginScreen from './components/LoginScreen';
 import RegisterScreen from './components/RegisterScreen';
 import { RecordingProvider, useRecording } from './contexts/RecordingContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { initDatabase } from './services/database';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -176,6 +177,55 @@ const AppNavigator = () => {
 
 // Main App Component
 export default function App() {
+  const [dbInitialized, setDbInitialized] = React.useState(false);
+  const [initError, setInitError] = React.useState(null);
+
+  React.useEffect(() => {
+    async function setupDatabase() {
+      try {
+        console.log('Starting database initialization...');
+        await initDatabase();
+        console.log('Database initialized successfully');
+        setDbInitialized(true);
+      } catch (error) {
+        console.error('Failed to initialize database:', error);
+        setInitError(error.message);
+
+        // For web/Snack, just log and continue
+        if (Platform.OS === 'web') {
+          console.warn('Running in web environment - SQLite not available');
+          setDbInitialized(true);
+        } else {
+          // Show alert for mobile
+          Alert.alert(
+            'Database Error',
+            `Failed to initialize database: ${error.message}\n\nPlease restart the app.`,
+            [{ text: 'OK', onPress: () => setDbInitialized(true) }]
+          );
+        }
+      }
+    }
+    setupDatabase();
+  }, []);
+
+  if (!dbInitialized) {
+    return (
+      <View style={styles.loadingScreen}>
+        <View style={styles.logoContainer}>
+          <View style={styles.logoCircle1} />
+          <View style={styles.logoCircle2} />
+          <View style={styles.logoCircle3} />
+          <Text style={styles.logoText}>Otter</Text>
+        </View>
+        <ActivityIndicator size="large" color="#3B6FE8" style={{ marginTop: 20 }} />
+        <Text style={styles.loadingText}>Initializing database...</Text>
+        {initError && (
+          <Text style={styles.errorText}>Error: {initError}</Text>
+        )}
+      </View>
+    );
+  }
+
   return (
     <SafeAreaProvider>
       <AuthProvider>
@@ -265,5 +315,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     marginTop: 12,
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#E8504C',
+    marginTop: 8,
+    textAlign: 'center',
+    paddingHorizontal: 20,
   },
 });

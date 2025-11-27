@@ -1,13 +1,23 @@
 import * as SQLite from 'expo-sqlite';
+import { Platform } from 'react-native';
 
 let db = null;
 
 // Initialize database
 export const initDatabase = async () => {
   try {
+    // Check if running in web environment
+    if (Platform.OS === 'web') {
+      console.warn('SQLite is not available in web environment');
+      throw new Error('SQLite is not supported in web/Snack environment. Please use Expo Go app or local development.');
+    }
+
+    console.log('Opening database...');
     db = await SQLite.openDatabaseAsync('noteapp.db');
-    
+    console.log('Database opened successfully');
+
     // Create users table
+    console.log('Creating users table...');
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -17,8 +27,10 @@ export const initDatabase = async () => {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    
+    console.log('Users table created');
+
     // Create courses table
+    console.log('Creating courses table...');
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS courses (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -28,8 +40,10 @@ export const initDatabase = async () => {
         FOREIGN KEY (user_id) REFERENCES users (id)
       );
     `);
-    
+    console.log('Courses table created');
+
     // Create lectures table
+    console.log('Creating lectures table...');
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS lectures (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -42,8 +56,10 @@ export const initDatabase = async () => {
         FOREIGN KEY (user_id) REFERENCES users (id)
       );
     `);
-    
+    console.log('Lectures table created');
+
     // Create transcripts table
+    console.log('Creating transcripts table...');
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS transcripts (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -56,8 +72,9 @@ export const initDatabase = async () => {
         FOREIGN KEY (user_id) REFERENCES users (id)
       );
     `);
-    
-    console.log('Database initialized successfully');
+    console.log('Transcripts table created');
+
+    console.log('✅ Database initialized successfully');
     return db;
   } catch (error) {
     console.error('Error initializing database:', error);

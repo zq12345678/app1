@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { initDatabase, createUser, getUserByEmail, getUserById } from '../services/database';
+import { createUser, getUserByEmail, getUserById } from '../services/database';
 
 const AuthContext = createContext({});
 
@@ -9,30 +9,36 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Initialize database and check for existing session
+  // Check for existing session (database already initialized in App.js)
   useEffect(() => {
     initializeApp();
   }, []);
 
   const initializeApp = async () => {
     try {
-      // Initialize database
-      await initDatabase();
-      setIsInitialized(true);
-      
+      console.log('Checking for existing session...');
+
       // Check for existing session
       const userId = await AsyncStorage.getItem('userId');
       if (userId) {
+        console.log('Found userId in storage:', userId);
         const userData = await getUserById(parseInt(userId));
         if (userData) {
+          console.log('User data loaded:', userData.email);
           setUser(userData);
         } else {
+          console.log('User not found in database, clearing session');
           // Invalid session, clear it
           await AsyncStorage.removeItem('userId');
         }
+      } else {
+        console.log('No existing session found');
       }
+
+      setIsInitialized(true);
     } catch (error) {
-      console.error('Error initializing app:', error);
+      console.error('Error initializing auth:', error);
+      setIsInitialized(true); // Still mark as initialized to show login screen
     } finally {
       setLoading(false);
     }
