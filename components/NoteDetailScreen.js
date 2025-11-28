@@ -506,8 +506,8 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#E0E0E0',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    paddingBottom: Platform.OS === 'ios' ? 30 : 12,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === 'ios' ? 90 : 80, // Account for bottom tab bar (70px) + safe area
   },
   inputBar: {
     flexDirection: 'row',
