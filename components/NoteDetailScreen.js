@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRecording } from '../contexts/RecordingContext';
+import { GOOGLE_API_KEY, GOOGLE_SPEECH_API_URL, GOOGLE_GEMINI_API_URL } from '../config/api';
 import { useAuth } from '../contexts/AuthContext';
 import { getTranscriptsByLectureId, createTranscript, deleteTranscript, updateTranscript } from '../services/database';
 
@@ -167,7 +168,9 @@ export default function NoteDetailScreen({ route, navigation }) {
     try {
       const newContent = editingItem.content.startsWith('[Note] ')
         ? `[Note] ${editContent.trim()}`
-        : editContent.trim();
+        : editingItem.content.startsWith('[Summary] ')
+          ? `[Summary] ${editContent.trim()}`
+          : editContent.trim();
       await updateTranscript(editingItem.id, user.id, newContent);
       setShowEditModal(false);
       setEditingItem(null);
@@ -178,6 +181,69 @@ export default function NoteDetailScreen({ route, navigation }) {
       console.error('Error updating item:', error);
     }
   }, [editContent, editingItem, user.id, loadTranscripts]);
+
+  // Generate Summary
+  const handleGenerateSummary = useCallback(async () => {
+    // Filter out notes and existing summaries, only use transcripts
+    const transcriptText = transcripts
+      .filter(t => !t.content.startsWith('[Note]') && !t.content.startsWith('[Summary]'))
+      .map(t => t.content)
+      .join('\n');
+
+    if (!transcriptText.trim()) {
+      Alert.alert('No Content', 'There are no transcripts to summarize.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      console.log('Generating summary for text length:', transcriptText.length);
+
+      const response = await fetch(`${GOOGLE_GEMINI_API_URL}?key=${GOOGLE_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `Please summarize the following lecture transcript into a concise summary (in the same language as the transcript):\n\n${transcriptText}`
+            }]
+          }]
+        }),
+      });
+
+      const result = await response.json();
+      console.log('Gemini API response:', JSON.stringify(result, null, 2));
+
+      if (result.error) {
+        throw new Error(result.error.message || 'Failed to generate summary');
+      }
+
+      if (result.candidates && result.candidates[0] && result.candidates[0].content) {
+        const summaryText = result.candidates[0].content.parts[0].text;
+
+        // Check if a summary already exists and update it, or create a new one
+        const existingSummary = transcripts.find(t => t.content.startsWith('[Summary] '));
+
+        if (existingSummary) {
+          await updateTranscript(existingSummary.id, user.id, `[Summary] ${summaryText}`);
+        } else {
+          await createTranscript(lectureId, user.id, `[Summary] ${summaryText}`, 0);
+        }
+
+        loadTranscripts();
+        Alert.alert('Success', 'Summary generated successfully!');
+      } else {
+        throw new Error('No summary returned from API');
+      }
+    } catch (error) {
+      console.error('Summary generation error:', error);
+      Alert.alert('Error', 'Failed to generate summary: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [transcripts, lectureId, user.id, loadTranscripts]);
 
   // Header Component
   const renderHeader = () => (
@@ -212,7 +278,7 @@ export default function NoteDetailScreen({ route, navigation }) {
 
   // Transcript Content
   const renderTranscriptContent = () => {
-    const transcriptItems = transcripts.filter(item => !item.content.startsWith('[Note]'));
+    const transcriptItems = transcripts.filter(item => !item.content.startsWith('[Note]') && !item.content.startsWith('[Summary]'));
 
     if (loading) {
       return (
@@ -328,19 +394,69 @@ export default function NoteDetailScreen({ route, navigation }) {
   };
 
   // Summary placeholder content
-  const renderSummaryContent = () => (
-    <View style={styles.emptyContainer}>
-      <MaterialCommunityIcons name="text-box-outline" size={64} color="#CCC" />
-      <Text style={styles.emptyText}>No summary yet</Text>
-      <TouchableOpacity
-        style={styles.generateButton}
-        onPress={() => Alert.alert('Coming Soon', 'Summary generation feature coming soon')}
-      >
-        <MaterialCommunityIcons name="auto-fix" size={20} color="white" />
-        <Text style={styles.generateButtonText}>Generate Summary</Text>
-      </TouchableOpacity>
-    </View>
-  );
+  const renderSummaryContent = () => {
+    const summaryItem = transcripts.find(item => item.content.startsWith('[Summary] '));
+
+    if (loading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#3B6FE8" />
+          <Text style={{ marginTop: 10, color: '#666' }}>Generating summary...</Text>
+        </View>
+      );
+    }
+
+    if (summaryItem) {
+      return (
+        <ScrollView style={styles.transcriptScroll} contentContainerStyle={styles.transcriptContent}>
+          <View style={styles.noteItem}>
+            <View style={styles.itemHeader}>
+              <View style={styles.itemHeaderLeft}>
+                <Text style={styles.timestampNote}>{formatTime(summaryItem.created_at)}</Text>
+                <Text style={styles.speaker}>AI Summary</Text>
+              </View>
+              <View style={styles.itemActions}>
+                <TouchableOpacity
+                  style={styles.actionButton}
+                  onPress={() => handleEdit(summaryItem)}
+                >
+                  <MaterialCommunityIcons name="pencil-outline" size={18} color="#666" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.actionButton}
+                  onPress={() => handleDelete(summaryItem)}
+                >
+                  <MaterialCommunityIcons name="delete-outline" size={18} color="#E8504C" />
+                </TouchableOpacity>
+              </View>
+            </View>
+            <Text style={styles.transcriptText}>{summaryItem.content.replace('[Summary] ', '')}</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.generateButton}
+            onPress={handleGenerateSummary}
+          >
+            <MaterialCommunityIcons name="refresh" size={20} color="white" />
+            <Text style={styles.generateButtonText}>Regenerate Summary</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      );
+    }
+
+    return (
+      <View style={styles.emptyContainer}>
+        <MaterialCommunityIcons name="text-box-outline" size={64} color="#CCC" />
+        <Text style={styles.emptyText}>No summary yet</Text>
+        <TouchableOpacity
+          style={styles.generateButton}
+          onPress={handleGenerateSummary}
+        >
+          <MaterialCommunityIcons name="auto-fix" size={20} color="white" />
+          <Text style={styles.generateButtonText}>Generate Summary</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
   // Bottom Input Bar for Transcript
   const renderTranscriptInputBar = () => (
