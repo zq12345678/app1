@@ -37,9 +37,9 @@ export default function NoteDetailScreen({ route, navigation }) {
 
   useEffect(() => {
     loadTranscripts();
-  }, []);
+  }, [loadTranscripts]);
 
-  const loadTranscripts = async () => {
+  const loadTranscripts = useCallback(async () => {
     try {
       setLoading(true);
       const lectureTranscripts = await getTranscriptsByLectureId(lectureId, user.id);
@@ -50,7 +50,7 @@ export default function NoteDetailScreen({ route, navigation }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [lectureId, user.id]);
 
   // Handle transcription result from voice recording
   const handleTranscription = useCallback(async (result) => {
@@ -63,7 +63,7 @@ export default function NoteDetailScreen({ route, navigation }) {
         console.error('Error saving transcript:', error);
       }
     }
-  }, [lectureId, user.id]);
+  }, [lectureId, user.id, loadTranscripts]);
 
   useEffect(() => {
     registerHandler(handleTranscription);
@@ -93,7 +93,7 @@ export default function NoteDetailScreen({ route, navigation }) {
       Alert.alert('Error', 'Failed to save transcript');
       console.error('Error saving transcript:', error);
     }
-  }, [transcriptInput, lectureId, user.id]);
+  }, [transcriptInput, lectureId, user.id, loadTranscripts]);
 
   // Handle manual note input
   const handleSendNote = useCallback(async () => {
@@ -110,7 +110,7 @@ export default function NoteDetailScreen({ route, navigation }) {
       Alert.alert('Error', 'Failed to save note');
       console.error('Error saving note:', error);
     }
-  }, [noteInput, lectureId, user.id]);
+  }, [noteInput, lectureId, user.id, loadTranscripts]);
 
   // Handle delete
   const handleDelete = useCallback((item) => {
@@ -134,7 +134,7 @@ export default function NoteDetailScreen({ route, navigation }) {
         }
       ]
     );
-  }, [user.id]);
+  }, [user.id, loadTranscripts]);
 
   // Handle edit
   const handleEdit = useCallback((item) => {
@@ -165,7 +165,7 @@ export default function NoteDetailScreen({ route, navigation }) {
       Alert.alert('Error', 'Failed to update item');
       console.error('Error updating item:', error);
     }
-  }, [editContent, editingItem, user.id]);
+  }, [editContent, editingItem, user.id, loadTranscripts]);
 
   // Header Component
   const Header = () => (
