@@ -168,7 +168,7 @@ export default function NoteDetailScreen({ route, navigation }) {
   }, [editContent, editingItem, user.id, loadTranscripts]);
 
   // Header Component
-  const Header = () => (
+  const renderHeader = () => (
     <View style={styles.header}>
       <TouchableOpacity onPress={() => navigation.goBack()}>
         <MaterialCommunityIcons name="arrow-left" size={28} color="#333" />
@@ -182,7 +182,7 @@ export default function NoteDetailScreen({ route, navigation }) {
   );
 
   // Tab Bar Component
-  const TabBar = () => (
+  const renderTabBar = () => (
     <View style={styles.tabBar}>
       {['Summary', 'Transcript', 'Note'].map((tab) => (
         <TouchableOpacity
@@ -199,7 +199,7 @@ export default function NoteDetailScreen({ route, navigation }) {
   );
 
   // Transcript Content
-  const TranscriptContent = () => {
+  const renderTranscriptContent = () => {
     const transcriptItems = transcripts.filter(item => !item.content.startsWith('[Note]'));
 
     if (loading) {
@@ -258,7 +258,7 @@ export default function NoteDetailScreen({ route, navigation }) {
   };
 
   // Note Content
-  const NoteContent = () => {
+  const renderNoteContent = () => {
     const noteItems = transcripts.filter(item => item.content.startsWith('[Note]'));
 
     if (loading) {
@@ -316,7 +316,7 @@ export default function NoteDetailScreen({ route, navigation }) {
   };
 
   // Summary placeholder content
-  const SummaryContent = () => (
+  const renderSummaryContent = () => (
     <View style={styles.emptyContainer}>
       <MaterialCommunityIcons name="text-box-outline" size={64} color="#CCC" />
       <Text style={styles.emptyText}>No summary yet</Text>
@@ -331,7 +331,7 @@ export default function NoteDetailScreen({ route, navigation }) {
   );
 
   // Bottom Input Bar for Transcript
-  const TranscriptInputBar = () => (
+  const renderTranscriptInputBar = () => (
     <View style={styles.inputBarContainer}>
       <View style={styles.inputBar}>
         <TextInput
@@ -368,7 +368,7 @@ export default function NoteDetailScreen({ route, navigation }) {
   );
 
   // Bottom Input Bar for Notes
-  const NoteInputBar = () => (
+  const renderNoteInputBar = () => (
     <View style={styles.inputBarContainer}>
       <View style={styles.inputBar}>
         <TextInput
@@ -405,7 +405,7 @@ export default function NoteDetailScreen({ route, navigation }) {
   );
 
   // Edit Modal
-  const EditModal = () => (
+  const renderEditModal = () => (
     <Modal
       visible={showEditModal}
       transparent={true}
@@ -456,8 +456,8 @@ export default function NoteDetailScreen({ route, navigation }) {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
-        <Header />
-        <TabBar />
+        {renderHeader()}
+        {renderTabBar()}
 
         {isProcessing && (
           <View style={styles.processingBanner}>
@@ -467,16 +467,16 @@ export default function NoteDetailScreen({ route, navigation }) {
         )}
 
         <View style={styles.contentContainer}>
-          {activeTab === 'Transcript' && <TranscriptContent />}
-          {activeTab === 'Summary' && <SummaryContent />}
-          {activeTab === 'Note' && <NoteContent />}
+          {activeTab === 'Transcript' && renderTranscriptContent()}
+          {activeTab === 'Summary' && renderSummaryContent()}
+          {activeTab === 'Note' && renderNoteContent()}
         </View>
 
-        {activeTab === 'Transcript' && <TranscriptInputBar />}
-        {activeTab === 'Note' && <NoteInputBar />}
+        {activeTab === 'Transcript' && renderTranscriptInputBar()}
+        {activeTab === 'Note' && renderNoteInputBar()}
       </KeyboardAvoidingView>
 
-      <EditModal />
+      {renderEditModal()}
     </SafeAreaView>
   );
 }
