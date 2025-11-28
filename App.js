@@ -3,7 +3,7 @@ import * as React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ActivityIndicator, Platform, Alert } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createStackNavigator } from '@react-navigation/stack';
+import { createStackNavigator, CardStyleInterpolators } from '@react-navigation/stack';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -29,6 +29,9 @@ const HomeStack = () => {
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
+        gestureEnabled: true,
+        gestureDirection: 'horizontal',
+        cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
       }}
     >
       <Stack.Screen name="HomeMain" component={HomeScreen} />
