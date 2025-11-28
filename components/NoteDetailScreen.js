@@ -53,22 +53,22 @@ export default function NoteDetailScreen({ route, navigation }) {
   };
 
   // Handle transcription result from voice recording
-  useEffect(() => {
-    const handleTranscription = async (result) => {
-      if (result && result.transcription) {
-        try {
-          await createTranscript(lectureId, user.id, result.transcription, 0);
-          loadTranscripts();
-        } catch (error) {
-          Alert.alert('Error', 'Failed to save transcript');
-          console.error('Error saving transcript:', error);
-        }
+  const handleTranscription = useCallback(async (result) => {
+    if (result && result.transcription) {
+      try {
+        await createTranscript(lectureId, user.id, result.transcription, 0);
+        loadTranscripts();
+      } catch (error) {
+        Alert.alert('Error', 'Failed to save transcript');
+        console.error('Error saving transcript:', error);
       }
-    };
+    }
+  }, [lectureId, user.id]);
 
+  useEffect(() => {
     registerHandler(handleTranscription);
     return () => unregisterHandler();
-  }, [lectureId, user.id]);
+  }, [handleTranscription, registerHandler, unregisterHandler]);
 
   // Format time from ISO string to HH:MM
   const formatTime = useCallback((isoString) => {
