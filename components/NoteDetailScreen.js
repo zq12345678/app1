@@ -20,6 +20,16 @@ import { GOOGLE_API_KEY, GOOGLE_SPEECH_API_URL, GOOGLE_GEMINI_API_URL } from '..
 import { useAuth } from '../contexts/AuthContext';
 import { getTranscriptsByLectureId, createTranscript, deleteTranscript, updateTranscript } from '../services/database';
 
+const LANGUAGES = [
+  { code: 'en', label: 'English' },
+  { code: 'zh-CN', label: '简体中文' },
+  { code: 'it', label: 'Italiano' },
+  { code: 'zh-TW', label: '繁體中文' },
+  { code: 'es', label: 'Español' },
+  { code: 'ja', label: '日本語' },
+  { code: 'ko', label: '한국어' },
+];
+
 export default function NoteDetailScreen({ route, navigation }) {
   const { lectureId, lectureTitle, lectureDate, courseName } = route.params;
   const [activeTab, setActiveTab] = useState('Transcript');
@@ -30,6 +40,13 @@ export default function NoteDetailScreen({ route, navigation }) {
   const [editingItem, setEditingItem] = useState(null);
   const [editContent, setEditContent] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
+
+  // Translation State
+  const [isTranslationEnabled, setIsTranslationEnabled] = useState(false);
+  const [targetLanguage, setTargetLanguage] = useState('zh-CN');
+  const [showLanguageSelector, setShowLanguageSelector] = useState(false);
+  const [translations, setTranslations] = useState({}); // { [itemId]: { [lang]: string } }
+  const [translatingIds, setTranslatingIds] = useState(new Set());
   const { user } = useAuth();
   const { registerHandler, unregisterHandler, isProcessing, isRecording, toggleRecording } = useRecording();
   const scrollViewRef = useRef(null);
@@ -245,6 +262,70 @@ export default function NoteDetailScreen({ route, navigation }) {
     }
   }, [transcripts, lectureId, user.id, loadTranscripts]);
 
+  // Translation Logic
+  const translateText = async (text, targetLang) => {
+    try {
+      const response = await fetch(`${GOOGLE_GEMINI_API_URL}?key=${GOOGLE_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `Translate the following text to ${LANGUAGES.find(l => l.code === targetLang)?.label || targetLang}. Only return the translated text, no explanations.\n\n${text}`
+            }]
+          }]
+        }),
+      });
+
+      const result = await response.json();
+      if (result.candidates && result.candidates[0] && result.candidates[0].content) {
+        return result.candidates[0].content.parts[0].text.trim();
+      }
+      return null;
+    } catch (error) {
+      console.error('Translation error:', error);
+      return null;
+    }
+  };
+
+  const handleTranslateItem = useCallback(async (item) => {
+    if (translations[item.id]?.[targetLanguage] || translatingIds.has(item.id)) {
+      return;
+    }
+
+    setTranslatingIds(prev => new Set(prev).add(item.id));
+
+    const contentToTranslate = item.content.replace(/^\[(Note|Summary)\] /, '');
+    const translatedText = await translateText(contentToTranslate, targetLanguage);
+
+    if (translatedText) {
+      setTranslations(prev => ({
+        ...prev,
+        [item.id]: {
+          ...prev[item.id],
+          [targetLanguage]: translatedText
+        }
+      }));
+    }
+
+    setTranslatingIds(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(item.id);
+      return newSet;
+    });
+  }, [translations, targetLanguage, translatingIds]);
+
+  // Effect to trigger translation when enabled
+  useEffect(() => {
+    if (isTranslationEnabled) {
+      transcripts.forEach(item => {
+        handleTranslateItem(item);
+      });
+    }
+  }, [isTranslationEnabled, targetLanguage, transcripts, handleTranslateItem]);
+
   // Header Component
   const renderHeader = () => (
     <View style={styles.header}>
@@ -255,7 +336,13 @@ export default function NoteDetailScreen({ route, navigation }) {
         <Text style={styles.headerTitle}>{lectureTitle}</Text>
         <Text style={styles.headerSubtitle}>{lectureDate}</Text>
       </View>
-      <View style={{ width: 28 }} />
+      <TouchableOpacity onPress={() => setShowLanguageSelector(true)}>
+        <MaterialCommunityIcons
+          name="translate"
+          size={24}
+          color={isTranslationEnabled ? "#3B6FE8" : "#666"}
+        />
+      </TouchableOpacity>
     </View>
   );
 
@@ -328,6 +415,17 @@ export default function NoteDetailScreen({ route, navigation }) {
               </View>
             </View>
             <Text style={styles.transcriptText}>{item.content}</Text>
+            {isTranslationEnabled && (
+              <View style={styles.translationContainer}>
+                {translatingIds.has(item.id) ? (
+                  <ActivityIndicator size="small" color="#3B6FE8" />
+                ) : translations[item.id]?.[targetLanguage] ? (
+                  <Text style={styles.translatedText}>
+                    {translations[item.id][targetLanguage]}
+                  </Text>
+                ) : null}
+              </View>
+            )}
           </View>
         ))}
         <View style={styles.bottomSpacer} />
@@ -386,6 +484,17 @@ export default function NoteDetailScreen({ route, navigation }) {
               </View>
             </View>
             <Text style={styles.transcriptText}>{item.content.replace('[Note] ', '')}</Text>
+            {isTranslationEnabled && (
+              <View style={styles.translationContainer}>
+                {translatingIds.has(item.id) ? (
+                  <ActivityIndicator size="small" color="#3B6FE8" />
+                ) : translations[item.id]?.[targetLanguage] ? (
+                  <Text style={styles.translatedText}>
+                    {translations[item.id][targetLanguage]}
+                  </Text>
+                ) : null}
+              </View>
+            )}
           </View>
         ))}
         <View style={styles.bottomSpacer} />
@@ -431,6 +540,17 @@ export default function NoteDetailScreen({ route, navigation }) {
               </View>
             </View>
             <Text style={styles.transcriptText}>{summaryItem.content.replace('[Summary] ', '')}</Text>
+            {isTranslationEnabled && (
+              <View style={styles.translationContainer}>
+                {translatingIds.has(summaryItem.id) ? (
+                  <ActivityIndicator size="small" color="#3B6FE8" />
+                ) : translations[summaryItem.id]?.[targetLanguage] ? (
+                  <Text style={styles.translatedText}>
+                    {translations[summaryItem.id][targetLanguage]}
+                  </Text>
+                ) : null}
+              </View>
+            )}
           </View>
           <TouchableOpacity
             style={styles.generateButton}
@@ -577,6 +697,57 @@ export default function NoteDetailScreen({ route, navigation }) {
     </Modal>
   );
 
+  // Language Selector Modal
+  const renderLanguageSelector = () => (
+    <Modal
+      visible={showLanguageSelector}
+      transparent={true}
+      animationType="fade"
+      onRequestClose={() => setShowLanguageSelector(false)}
+    >
+      <TouchableOpacity
+        style={styles.modalOverlay}
+        activeOpacity={1}
+        onPress={() => setShowLanguageSelector(false)}
+      >
+        <View style={styles.languageModalContent}>
+          <View style={styles.languageHeader}>
+            <Text style={styles.languageTitle}>Translation</Text>
+            <View style={styles.switchContainer}>
+              <TouchableOpacity
+                style={[styles.switchButton, isTranslationEnabled && styles.switchActive]}
+                onPress={() => setIsTranslationEnabled(!isTranslationEnabled)}
+              >
+                <View style={[styles.switchKnob, isTranslationEnabled && styles.switchKnobActive]} />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <ScrollView style={styles.languageList}>
+            {LANGUAGES.map((lang) => (
+              <TouchableOpacity
+                key={lang.code}
+                style={styles.languageOption}
+                onPress={() => {
+                  setTargetLanguage(lang.code);
+                  setIsTranslationEnabled(true);
+                  // setShowLanguageSelector(false); // Keep open to let user see selection
+                }}
+              >
+                <View style={styles.checkBox}>
+                  {targetLanguage === lang.code && (
+                    <View style={styles.checkBoxInner} />
+                  )}
+                </View>
+                <Text style={styles.languageText}>{lang.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      </TouchableOpacity>
+    </Modal>
+  );
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <KeyboardAvoidingView
@@ -605,6 +776,7 @@ export default function NoteDetailScreen({ route, navigation }) {
       </KeyboardAvoidingView>
 
       {renderEditModal()}
+      {renderLanguageSelector()}
     </SafeAreaView>
   );
 }
@@ -803,6 +975,100 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     minHeight: 48,
+  },
+  translationContainer: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#EEE',
+  },
+  translatedText: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: '#3B6FE8',
+  },
+  // Language Modal Styles
+  languageModalContent: {
+    backgroundColor: 'white',
+    width: '80%',
+    maxHeight: '60%',
+    borderRadius: 16,
+    padding: 20,
+    alignSelf: 'center',
+    marginTop: 'auto',
+    marginBottom: 'auto',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  languageHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEE',
+  },
+  languageTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  switchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  switchButton: {
+    width: 50,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#E0E0E0',
+    padding: 2,
+  },
+  switchActive: {
+    backgroundColor: '#3B6FE8',
+  },
+  switchKnob: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'white',
+  },
+  switchKnobActive: {
+    transform: [{ translateX: 20 }],
+  },
+  languageList: {
+    maxHeight: 300,
+  },
+  languageOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F5F5F5',
+  },
+  checkBox: {
+    width: 24,
+    height: 24,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: '#333',
+    marginRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkBoxInner: {
+    width: 14,
+    height: 14,
+    backgroundColor: '#3B6FE8',
+    borderRadius: 2,
+  },
+  languageText: {
+    fontSize: 16,
+    color: '#333',
   },
   textInput: {
     flex: 1,
