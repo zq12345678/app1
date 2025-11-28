@@ -402,16 +402,16 @@ export default function NoteDetailScreen({ route, navigation }) {
               </View>
               <View style={styles.itemActions}>
                 <TouchableOpacity
-                  style={styles.actionButton}
+                  style={[styles.actionButton, styles.editButton]}
                   onPress={() => handleEdit(item)}
                 >
-                  <MaterialCommunityIcons name="pencil-outline" size={18} color="#666" />
+                  <MaterialCommunityIcons name="pencil-outline" size={16} color="#3B6FE8" />
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={styles.actionButton}
+                  style={[styles.actionButton, styles.deleteButton]}
                   onPress={() => handleDelete(item)}
                 >
-                  <MaterialCommunityIcons name="delete-outline" size={18} color="#E8504C" />
+                  <MaterialCommunityIcons name="delete-outline" size={16} color="#E8504C" />
                 </TouchableOpacity>
               </View>
             </View>
@@ -471,16 +471,16 @@ export default function NoteDetailScreen({ route, navigation }) {
               </View>
               <View style={styles.itemActions}>
                 <TouchableOpacity
-                  style={styles.actionButton}
+                  style={[styles.actionButton, styles.editButton]}
                   onPress={() => handleEdit(item)}
                 >
-                  <MaterialCommunityIcons name="pencil-outline" size={18} color="#666" />
+                  <MaterialCommunityIcons name="pencil-outline" size={16} color="#3B6FE8" />
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={styles.actionButton}
+                  style={[styles.actionButton, styles.deleteButton]}
                   onPress={() => handleDelete(item)}
                 >
-                  <MaterialCommunityIcons name="delete-outline" size={18} color="#E8504C" />
+                  <MaterialCommunityIcons name="delete-outline" size={16} color="#E8504C" />
                 </TouchableOpacity>
               </View>
             </View>
@@ -527,16 +527,16 @@ export default function NoteDetailScreen({ route, navigation }) {
               </View>
               <View style={styles.itemActions}>
                 <TouchableOpacity
-                  style={styles.actionButton}
+                  style={[styles.actionButton, styles.editButton]}
                   onPress={() => handleEdit(summaryItem)}
                 >
-                  <MaterialCommunityIcons name="pencil-outline" size={18} color="#666" />
+                  <MaterialCommunityIcons name="pencil-outline" size={16} color="#3B6FE8" />
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={styles.actionButton}
+                  style={[styles.actionButton, styles.deleteButton]}
                   onPress={() => handleDelete(summaryItem)}
                 >
-                  <MaterialCommunityIcons name="delete-outline" size={18} color="#E8504C" />
+                  <MaterialCommunityIcons name="delete-outline" size={16} color="#E8504C" />
                 </TouchableOpacity>
               </View>
             </View>
@@ -927,8 +927,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   actionButton: {
-    padding: 6,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginLeft: 8,
+  },
+  editButton: {
+    backgroundColor: '#E6F0FF', // Light blue background
+  },
+  deleteButton: {
+    backgroundColor: '#FFE6E6', // Light red background
+  },
+  editButton: {
+    backgroundColor: '#E6F0FF', // Light blue background
+  },
+  deleteButton: {
+    backgroundColor: '#FFE6E6', // Light red background
   },
   transcriptHeader: {
     flexDirection: 'row',
