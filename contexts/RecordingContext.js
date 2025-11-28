@@ -162,7 +162,9 @@ export const RecordingProvider = ({ children }) => {
                         console.log('Context: Recognized text:', transcript);
 
                         // 创建多语言文本对象（实际应用中可以调用翻译 API）
+                        // 注意：必须包含 transcription 属性，因为 NoteDetailScreen 期望这个字段
                         const recognizedText = {
+                            transcription: transcript,  // NoteDetailScreen 使用此字段保存文本
                             english: transcript,
                             simplifiedChinese: transcript,
                             traditionalChinese: transcript,
