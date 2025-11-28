@@ -19,6 +19,7 @@ import { useRecording } from '../contexts/RecordingContext';
 import { GOOGLE_API_KEY, GOOGLE_SPEECH_API_URL, GOOGLE_GEMINI_API_URL } from '../config/api';
 import { useAuth } from '../contexts/AuthContext';
 import { getTranscriptsByLectureId, createTranscript, deleteTranscript, updateTranscript } from '../services/database';
+import RecordingWaveform from './RecordingWaveform';
 
 const LANGUAGES = [
   { code: 'en', label: 'English' },
@@ -777,6 +778,7 @@ export default function NoteDetailScreen({ route, navigation }) {
 
       {renderEditModal()}
       {renderLanguageSelector()}
+      {isRecording && <RecordingWaveform onStop={toggleRecording} />}
     </SafeAreaView>
   );
 }
