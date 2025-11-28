@@ -56,14 +56,20 @@ export default function NoteDetailScreen({ route, navigation }) {
   const handleTranscription = useCallback(async (result) => {
     if (result && result.transcription) {
       try {
-        await createTranscript(lectureId, user.id, result.transcription, 0);
+        let content = result.transcription;
+        // If currently in Note tab, save as a note
+        if (activeTab === 'Note') {
+          content = `[Note] ${content}`;
+        }
+
+        await createTranscript(lectureId, user.id, content, 0);
         loadTranscripts();
       } catch (error) {
         Alert.alert('Error', 'Failed to save transcript');
         console.error('Error saving transcript:', error);
       }
     }
-  }, [lectureId, user.id, loadTranscripts]);
+  }, [lectureId, user.id, loadTranscripts, activeTab]);
 
   useEffect(() => {
     registerHandler(handleTranscription);
