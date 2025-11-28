@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 // Use AsyncStorage version for Snack compatibility
-import { createUser, getUserByEmail, getUserById } from '../services/database-async';
+import { createUser, getUserByEmail, getUserById } from '../services/database';
 
 const AuthContext = createContext({});
 
