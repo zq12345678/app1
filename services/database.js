@@ -270,3 +270,23 @@ export const deleteTranscript = async (transcriptId, userId) => {
     throw error;
   }
 };
+
+export const updateTranscript = async (transcriptId, userId, newContent) => {
+  try {
+    const transcripts = JSON.parse(await AsyncStorage.getItem(TRANSCRIPTS_KEY) || '[]');
+    const transcriptIndex = transcripts.findIndex(t => t.id === transcriptId && t.user_id === userId);
+
+    if (transcriptIndex === -1) {
+      throw new Error('Transcript not found');
+    }
+
+    transcripts[transcriptIndex].content = newContent;
+    transcripts[transcriptIndex].updated_at = new Date().toISOString();
+    await AsyncStorage.setItem(TRANSCRIPTS_KEY, JSON.stringify(transcripts));
+
+    return transcripts[transcriptIndex];
+  } catch (error) {
+    console.error('Error updating transcript:', error);
+    throw error;
+  }
+};
