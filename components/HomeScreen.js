@@ -35,10 +35,10 @@ function Header({ onLogout, username }) {
   );
 }
 
-// SortToggle Component with Style Guide Button
-function SortToggle({ sortBy, setSortBy, navigation }) {
+// ActionHeader Component with Style Guide Button and Search
+function ActionHeader({ navigation, searchQuery, setSearchQuery, isSearchVisible, setIsSearchVisible }) {
   return (
-    <View style={styles.sortToggleContainer}>
+    <View style={styles.actionHeaderContainer}>
       <TouchableOpacity
         style={styles.styleGuideButton}
         onPress={() => navigation.navigate('StyleGuide')}
@@ -46,39 +46,28 @@ function SortToggle({ sortBy, setSortBy, navigation }) {
         <Text style={styles.styleGuideButtonText}>Style Guide</Text>
       </TouchableOpacity>
 
-      <View style={styles.sortButtonsGroup}>
-        <TouchableOpacity
-          style={[
-            styles.sortButton,
-            sortBy === 'date' && styles.sortButtonActive,
-          ]}
-          onPress={() => setSortBy('date')}
-        >
-          <Text
-            style={[
-              styles.sortButtonText,
-              sortBy === 'date' && styles.sortButtonTextActive,
-            ]}
-          >
-            Date
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.sortButton,
-            sortBy === 'name' && styles.sortButtonActive,
-          ]}
-          onPress={() => setSortBy('name')}
-        >
-          <Text
-            style={[
-              styles.sortButtonText,
-              sortBy === 'name' && styles.sortButtonTextActive,
-            ]}
-          >
-            Name
-          </Text>
-        </TouchableOpacity>
+      <View style={styles.searchContainer}>
+        {isSearchVisible ? (
+          <View style={styles.searchBar}>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search courses..."
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoFocus
+            />
+            <TouchableOpacity onPress={() => {
+              setSearchQuery('');
+              setIsSearchVisible(false);
+            }}>
+              <MaterialCommunityIcons name="close" size={24} color="#666" />
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity onPress={() => setIsSearchVisible(true)}>
+            <MaterialCommunityIcons name="magnify" size={28} color="#333" />
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -147,7 +136,8 @@ function FileGrid({ navigation, courses, onNewCourse, onDeleteCourse, loading })
 
 // Main HomeScreen Component
 export default function HomeScreen({ navigation }) {
-  const [sortBy, setSortBy] = useState('date');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
@@ -165,13 +155,9 @@ export default function HomeScreen({ navigation }) {
       setLoading(true);
       const userCourses = await getCoursesByUserId(user.id);
 
-      // Sort courses
+      // Sort courses by date by default
       const sorted = [...userCourses].sort((a, b) => {
-        if (sortBy === 'date') {
-          return new Date(b.created_at) - new Date(a.created_at);
-        } else {
-          return a.name.localeCompare(b.name);
-        }
+        return new Date(b.created_at) - new Date(a.created_at);
       });
 
       setCourses(sorted);
@@ -185,7 +171,7 @@ export default function HomeScreen({ navigation }) {
 
   useEffect(() => {
     loadCourses();
-  }, [sortBy]);
+  }, []);
 
   const handleNewCourse = () => {
     setModalVisible(true);
@@ -233,10 +219,17 @@ export default function HomeScreen({ navigation }) {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <Header onLogout={handleLogout} username={user?.username || 'User'} />
-        <SortToggle sortBy={sortBy} setSortBy={setSortBy} navigation={navigation} />
+
+        <ActionHeader
+          navigation={navigation}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          isSearchVisible={isSearchVisible}
+          setIsSearchVisible={setIsSearchVisible}
+        />
         <FileGrid
           navigation={navigation}
-          courses={courses}
+          courses={courses.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))}
           onNewCourse={handleNewCourse}
           onDeleteCourse={handleDeleteCourse}
           loading={loading}
@@ -344,8 +337,8 @@ const styles = StyleSheet.create({
     color: '#666',
     fontWeight: '500',
   },
-  // SortToggle Styles
-  sortToggleContainer: {
+  // ActionHeader Styles
+  actionHeaderContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -354,37 +347,25 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     marginBottom: 1,
   },
-  styleGuideButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#3B6FE8',
-  },
-  styleGuideButtonText: {
-    fontSize: 13,
-    color: 'white',
-    fontWeight: '600',
-  },
-  sortButtonsGroup: {
+  searchContainer: {
     flexDirection: 'row',
+    alignItems: 'center',
   },
-  sortButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 8,
-    marginHorizontal: 4,
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F5F7',
     borderRadius: 20,
-    backgroundColor: '#E0E0E0',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    width: 200,
   },
-  sortButtonActive: {
-    backgroundColor: '#4A4A4A',
-  },
-  sortButtonText: {
+  searchInput: {
+    flex: 1,
     fontSize: 14,
-    color: '#666',
-    fontWeight: '500',
-  },
-  sortButtonTextActive: {
-    color: 'white',
+    color: '#333',
+    paddingVertical: 4,
+    marginRight: 8,
   },
   // FileGrid Styles
   fileGridContainer: {
