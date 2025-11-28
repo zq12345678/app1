@@ -99,6 +99,26 @@ export const getUserById = async (userId) => {
   }
 };
 
+export const updateUsername = async (userId, newUsername) => {
+  try {
+    const users = JSON.parse(await AsyncStorage.getItem(USERS_KEY) || '[]');
+    const userIndex = users.findIndex(u => u.id === userId);
+
+    if (userIndex === -1) {
+      throw new Error('User not found');
+    }
+
+    users[userIndex].username = newUsername;
+    await AsyncStorage.setItem(USERS_KEY, JSON.stringify(users));
+
+    const { password, ...userWithoutPassword } = users[userIndex];
+    return userWithoutPassword;
+  } catch (error) {
+    console.error('Error updating username:', error);
+    throw error;
+  }
+};
+
 // Course operations
 export const createCourse = async (userId, name) => {
   try {

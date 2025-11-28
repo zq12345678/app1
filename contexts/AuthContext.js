@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 // Use AsyncStorage version for Snack compatibility
-import { createUser, getUserByEmail, getUserById } from '../services/database';
+import { createUser, getUserByEmail, getUserById, updateUsername as updateUsernameDB } from '../services/database';
 
 const AuthContext = createContext({});
 
@@ -120,6 +120,26 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateUsername = async (newUsername) => {
+    try {
+      if (!newUsername || newUsername.trim().length === 0) {
+        throw new Error('Username cannot be empty');
+      }
+
+      if (!user) {
+        throw new Error('No user logged in');
+      }
+
+      const updatedUser = await updateUsernameDB(user.id, newUsername.trim());
+      setUser(updatedUser);
+
+      return { success: true };
+    } catch (error) {
+      console.error('Update username error:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
   const value = {
     user,
     loading,
@@ -127,6 +147,7 @@ export const AuthProvider = ({ children }) => {
     register,
     login,
     logout,
+    updateUsername,
     isAuthenticated: !!user,
   };
 

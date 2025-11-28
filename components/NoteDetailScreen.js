@@ -13,7 +13,7 @@ export default function NoteDetailScreen({ route, navigation }) {
   const [loading, setLoading] = useState(true);
   const [currentTimestamp, setCurrentTimestamp] = useState(0);
   const { user } = useAuth();
-  const { registerHandler, unregisterHandler, isProcessing } = useRecording();
+  const { registerHandler, unregisterHandler, isProcessing, isRecording, toggleRecording } = useRecording();
 
   useEffect(() => {
     loadTranscripts();
@@ -128,18 +128,61 @@ export default function NoteDetailScreen({ route, navigation }) {
   };
 
   // Summary and Note tabs (placeholder)
-  const PlaceholderContent = ({ message }) => (
+  const PlaceholderContent = ({ message, buttonText, onButtonPress }) => (
     <View style={styles.emptyContainer}>
       <MaterialCommunityIcons name="information-outline" size={64} color="#CCC" />
       <Text style={styles.emptyText}>{message}</Text>
+      {buttonText && (
+        <TouchableOpacity style={styles.placeholderButton} onPress={onButtonPress}>
+          <MaterialCommunityIcons name="plus" size={20} color="white" />
+          <Text style={styles.placeholderButtonText}>{buttonText}</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
+
+  // Floating action button for each tab
+  const FloatingActionButton = () => {
+    if (activeTab === 'Transcript') {
+      return (
+        <TouchableOpacity
+          style={[styles.floatingButton, isRecording && styles.floatingButtonRecording]}
+          onPress={toggleRecording}
+        >
+          <MaterialCommunityIcons
+            name={isRecording ? "stop" : "microphone"}
+            size={28}
+            color="white"
+          />
+        </TouchableOpacity>
+      );
+    } else if (activeTab === 'Summary') {
+      return (
+        <TouchableOpacity
+          style={styles.floatingButton}
+          onPress={() => Alert.alert('Coming Soon', 'Summary generation feature coming soon')}
+        >
+          <MaterialCommunityIcons name="text-box-plus-outline" size={28} color="white" />
+        </TouchableOpacity>
+      );
+    } else if (activeTab === 'Note') {
+      return (
+        <TouchableOpacity
+          style={styles.floatingButton}
+          onPress={() => Alert.alert('Coming Soon', 'Add note feature coming soon')}
+        >
+          <MaterialCommunityIcons name="note-plus-outline" size={28} color="white" />
+        </TouchableOpacity>
+      );
+    }
+    return null;
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <Header />
       <TabBar />
-      
+
       {isProcessing && (
         <View style={styles.processingBanner}>
           <ActivityIndicator size="small" color="white" />
@@ -148,8 +191,22 @@ export default function NoteDetailScreen({ route, navigation }) {
       )}
 
       {activeTab === 'Transcript' && <TranscriptContent />}
-      {activeTab === 'Summary' && <PlaceholderContent message="Summary feature coming soon" />}
-      {activeTab === 'Note' && <PlaceholderContent message="Note feature coming soon" />}
+      {activeTab === 'Summary' && (
+        <PlaceholderContent
+          message="No summary yet"
+          buttonText="Generate Summary"
+          onButtonPress={() => Alert.alert('Coming Soon', 'Summary generation feature coming soon')}
+        />
+      )}
+      {activeTab === 'Note' && (
+        <PlaceholderContent
+          message="No notes yet"
+          buttonText="Add Note"
+          onButtonPress={() => Alert.alert('Coming Soon', 'Add note feature coming soon')}
+        />
+      )}
+
+      <FloatingActionButton />
     </SafeAreaView>
   );
 }
@@ -285,6 +342,40 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: 100,
+  },
+  floatingButton: {
+    position: 'absolute',
+    bottom: 30,
+    right: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#3B6FE8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  floatingButtonRecording: {
+    backgroundColor: '#E8504C',
+  },
+  placeholderButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#3B6FE8',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 25,
+    marginTop: 20,
+  },
+  placeholderButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
   },
 });
 
