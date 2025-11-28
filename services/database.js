@@ -52,7 +52,7 @@ export const getDatabase = () => {
 export const createUser = async (email, username, password) => {
   try {
     const users = JSON.parse(await AsyncStorage.getItem(USERS_KEY) || '[]');
-    
+
     // Check if email already exists
     if (users.find(u => u.email === email)) {
       throw new Error('Email already exists');
@@ -123,7 +123,7 @@ export const updateUsername = async (userId, newUsername) => {
 export const createCourse = async (userId, name) => {
   try {
     const courses = JSON.parse(await AsyncStorage.getItem(COURSES_KEY) || '[]');
-    
+
     const newCourse = {
       id: courseIdCounter++,
       user_id: userId,
@@ -157,14 +157,14 @@ export const deleteCourse = async (courseId, userId) => {
     // Delete associated lectures and transcripts first
     const lectures = JSON.parse(await AsyncStorage.getItem(LECTURES_KEY) || '[]');
     const lectureIds = lectures.filter(l => l.course_id === courseId && l.user_id === userId).map(l => l.id);
-    
+
     const transcripts = JSON.parse(await AsyncStorage.getItem(TRANSCRIPTS_KEY) || '[]');
     const filteredTranscripts = transcripts.filter(t => !lectureIds.includes(t.lecture_id));
     await AsyncStorage.setItem(TRANSCRIPTS_KEY, JSON.stringify(filteredTranscripts));
-    
+
     const filteredLectures = lectures.filter(l => !(l.course_id === courseId && l.user_id === userId));
     await AsyncStorage.setItem(LECTURES_KEY, JSON.stringify(filteredLectures));
-    
+
     const courses = JSON.parse(await AsyncStorage.getItem(COURSES_KEY) || '[]');
     const filteredCourses = courses.filter(c => !(c.id === courseId && c.user_id === userId));
     await AsyncStorage.setItem(COURSES_KEY, JSON.stringify(filteredCourses));
@@ -178,7 +178,7 @@ export const deleteCourse = async (courseId, userId) => {
 export const createLecture = async (courseId, userId, title, lectureNumber) => {
   try {
     const lectures = JSON.parse(await AsyncStorage.getItem(LECTURES_KEY) || '[]');
-    
+
     const newLecture = {
       id: lectureIdCounter++,
       course_id: courseId,
@@ -215,7 +215,7 @@ export const deleteLecture = async (lectureId, userId) => {
     const transcripts = JSON.parse(await AsyncStorage.getItem(TRANSCRIPTS_KEY) || '[]');
     const filteredTranscripts = transcripts.filter(t => !(t.lecture_id === lectureId && t.user_id === userId));
     await AsyncStorage.setItem(TRANSCRIPTS_KEY, JSON.stringify(filteredTranscripts));
-    
+
     const lectures = JSON.parse(await AsyncStorage.getItem(LECTURES_KEY) || '[]');
     const filteredLectures = lectures.filter(l => !(l.id === lectureId && l.user_id === userId));
     await AsyncStorage.setItem(LECTURES_KEY, JSON.stringify(filteredLectures));
@@ -229,7 +229,7 @@ export const deleteLecture = async (lectureId, userId) => {
 export const createTranscript = async (lectureId, userId, content, timestamp = 0) => {
   try {
     const transcripts = JSON.parse(await AsyncStorage.getItem(TRANSCRIPTS_KEY) || '[]');
-    
+
     const newTranscript = {
       id: transcriptIdCounter++,
       lecture_id: lectureId,
@@ -253,7 +253,7 @@ export const getTranscriptsByLectureId = async (lectureId, userId) => {
     const transcripts = JSON.parse(await AsyncStorage.getItem(TRANSCRIPTS_KEY) || '[]');
     return transcripts
       .filter(t => t.lecture_id === lectureId && t.user_id === userId)
-      .sort((a, b) => a.timestamp - b.timestamp);
+      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
   } catch (error) {
     console.error('Error getting transcripts:', error);
     throw error;

@@ -71,12 +71,16 @@ export default function NoteDetailScreen({ route, navigation }) {
   }, [handleTranscription, registerHandler, unregisterHandler]);
 
   // Format time from ISO string to HH:MM
+  // Format time from ISO string to YYYY/MM/DD-HH:mm
   const formatTime = useCallback((isoString) => {
     if (!isoString) return '';
     const date = new Date(isoString);
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
     const hours = date.getHours().toString().padStart(2, '0');
     const minutes = date.getMinutes().toString().padStart(2, '0');
-    return `${hours}:${minutes}`;
+    return `${year}/${month}/${day}-${hours}:${minutes}`;
   }, []);
 
   // Handle manual transcript input
@@ -88,6 +92,7 @@ export default function NoteDetailScreen({ route, navigation }) {
     try {
       await createTranscript(lectureId, user.id, transcriptInput.trim(), 0);
       setTranscriptInput('');
+      Keyboard.dismiss(); // Dismiss keyboard after sending
       loadTranscripts();
     } catch (error) {
       Alert.alert('Error', 'Failed to save transcript');
@@ -105,6 +110,7 @@ export default function NoteDetailScreen({ route, navigation }) {
       const noteContent = `[Note] ${noteInput.trim()}`;
       await createTranscript(lectureId, user.id, noteContent, 0);
       setNoteInput('');
+      Keyboard.dismiss(); // Dismiss keyboard after sending
       loadTranscripts();
     } catch (error) {
       Alert.alert('Error', 'Failed to save note');
