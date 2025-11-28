@@ -17,7 +17,8 @@ import LoginScreen from './components/LoginScreen';
 import RegisterScreen from './components/RegisterScreen';
 import { RecordingProvider, useRecording } from './contexts/RecordingContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { initDatabase } from './services/database';
+// Use AsyncStorage version for Snack compatibility
+import { initDatabase } from './services/database-async';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
