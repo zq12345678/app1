@@ -39,12 +39,7 @@ function Header({ onLogout, username }) {
 function ActionHeader({ navigation, searchQuery, setSearchQuery, isSearchVisible, setIsSearchVisible }) {
   return (
     <View style={styles.actionHeaderContainer}>
-      <TouchableOpacity
-        style={styles.styleGuideButton}
-        onPress={() => navigation.navigate('StyleGuide')}
-      >
-        <Text style={styles.styleGuideButtonText}>Style Guide</Text>
-      </TouchableOpacity>
+      <View /> {/* Spacer to keep search on the right if needed, or just remove */}
 
       <View style={styles.searchContainer}>
         {isSearchVisible ? (

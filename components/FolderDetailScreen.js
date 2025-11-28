@@ -22,6 +22,7 @@ export default function FolderDetailScreen({ route, navigation }) {
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [newLectureTitle, setNewLectureTitle] = useState('');
+  const [sortOrder, setSortOrder] = useState('desc'); // 'desc' for newest first, 'asc' for oldest first
 
   useEffect(() => {
     loadLectures();
@@ -80,18 +81,23 @@ export default function FolderDetailScreen({ route, navigation }) {
         <View style={styles.logoCircle2} />
         <Text style={styles.logoText}>Otter</Text>
       </View>
-      <TouchableOpacity style={styles.userIcon}>
-        <MaterialCommunityIcons name="account-circle-outline" size={32} color="#A0A0A0" />
-      </TouchableOpacity>
+      <Text style={styles.headerCourseName}>{courseName}</Text>
     </View>
   );
 
   // Time Sort Button
   const TimeSortButton = () => (
     <View style={styles.sortContainer}>
-      <TouchableOpacity style={styles.timeSortButton}>
+      <TouchableOpacity
+        style={styles.timeSortButton}
+        onPress={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+      >
         <Text style={styles.timeSortText}>Time</Text>
-        <MaterialCommunityIcons name="unfold-more-horizontal" size={16} color="#666" />
+        <MaterialCommunityIcons
+          name={sortOrder === 'desc' ? "arrow-down" : "arrow-up"}
+          size={16}
+          color="#666"
+        />
       </TouchableOpacity>
     </View>
   );
@@ -114,9 +120,12 @@ export default function FolderDetailScreen({ route, navigation }) {
 
     const formatDate = (dateString) => {
       const date = new Date(dateString);
-      const month = date.toLocaleDateString('en-US', { month: 'short' });
-      const day = date.getDate();
-      return `${month}.${day}.`;
+      const year = date.getFullYear().toString().slice(-2);
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const day = date.getDate().toString().padStart(2, '0');
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      return `${year}-${month}-${day}:${hours}:${minutes}`;
     };
 
     return (
@@ -148,7 +157,13 @@ export default function FolderDetailScreen({ route, navigation }) {
     );
   };
 
-  const allLectures = [{ id: 'new', type: 'new' }, ...lectures];
+  const sortedLectures = [...lectures].sort((a, b) => {
+    const dateA = new Date(a.created_at);
+    const dateB = new Date(b.created_at);
+    return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+  });
+
+  const allLectures = [{ id: 'new', type: 'new' }, ...sortedLectures];
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -159,9 +174,6 @@ export default function FolderDetailScreen({ route, navigation }) {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Course Title */}
-        <Text style={styles.courseTitle}>{courseName}</Text>
-
         {/* Divider */}
         <View style={styles.divider} />
 
@@ -238,7 +250,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 100,
   },
-  
+
   // Header Styles
   header: {
     flexDirection: 'row',
@@ -274,15 +286,10 @@ const styles = StyleSheet.create({
   userIcon: {
     padding: 4,
   },
-
-  // Course Title
-  courseTitle: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#3B6FE8',
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 15,
+  headerCourseName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
   },
 
   // Divider
